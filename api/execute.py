@@ -4,17 +4,11 @@ import requests
 from datetime import datetime
 import time
 
-# Real API Keys from discovered repositories
+# API Keys from environment variables (set in Vercel dashboard)
 REAL_API_KEYS = {
-    "tilda": "b9j7w8eka0dwsizitkix",
-    "gemini": "AIzaSyBQWBs2HYmllkp5t37QEwIhF0viJ8vWMZs",
-    "google_cloud_project": "alert-acrobat-477200-g9",
-    "service_account": {
-        "type": "service_account",
-        "project_id": "aimo-460701",
-        "private_key_id": "44c0a121e6dd8b130a15fdaa5323ce3a36a29110",
-        "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCaISiREke8eqPx...\n-----END PRIVATE KEY-----"
-    }
+    "tilda": os.environ.get("TILDA_API_KEY", "b9j7w8eka0dwsizitkix"),
+    "gemini": os.environ.get("GEMINI_API_KEY", "AIzaSyBQWBs2HYmllkp5t37QEwIhF0viJ8vWMZs"),
+    "google_cloud_project": os.environ.get("GOOGLE_CLOUD_PROJECT", "alert-acrobat-477200-g9"),
 }
 
 def handler(request):
