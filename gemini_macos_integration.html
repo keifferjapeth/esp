@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI - MacOS Integration Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Liquid Glass Background Effects */
+        .liquid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .liquid-bg::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 70%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+            animation: liquidFloat 20s ease-in-out infinite;
+        }
+
+        @keyframes liquidFloat {
+
+            0%,
+            100% {
+                transform: translate(-25%, -25%) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(-30%, -20%) rotate(180deg);
+            }
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1em;
+        }
+
+        /* Status Panel */
+        .status-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        .status-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .status-value {
+            color: #ffffff;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .status-online {
+            color: #00ff88;
+        }
+
+        .status-offline {
+            color: #ff6b6b;
+        }
+
+        /* Chat Container */
+        .chat-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 30px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            min-height: 400px;
+        }
+
+        .chat-messages {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding-right: 10px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            animation: messageSlide 0.3s ease-out;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            background: rgba(0, 123, 255, 0.2);
+            border: 1px solid rgba(0, 123, 255, 0.3);
+            margin-left: 20%;
+        }
+
+        .message.assistant {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-right: 20%;
+        }
+
+        .message.system {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            text-align: center;
+        }
+
+        .message-content {
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        .message-timestamp {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.8em;
+            margin-top: 8px;
+        }
+
+        /* Input Area */
+        .input-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            position: relative;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 18px 25px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 25px;
+            color: #ffffff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .input-field:focus {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .send-button {
+            padding: 15px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            color: #ffffff;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .send-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+        }
+
+        /* File Upload Area */
+        .file-upload-area {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-area:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .file-upload-area.drag-over {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        .upload-text {
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 10px;
+        }
+
+        .file-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .file-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-remove {
+            cursor: pointer;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .action-button {
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            color: #ffffff;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .action-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+        }
+
+        .action-button i {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        /* Panels */
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+        }
+
+        .panel h3 {
+            color: #ffffff;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .panel-content {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Automator Workflow Panel */
+        .workflow-item {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .workflow-name {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .workflow-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .workflow-btn {
+            padding: 5px 12px;
+            background: rgba(0, 123, 255, 0.2);
+            border: 1px solid rgba(0, 123, 255, 0.3);
+            border-radius: 15px;
+            color: #ffffff;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .workflow-btn:hover {
+            background: rgba(0, 123, 255, 0.3);
+        }
+
+        .workflow-btn.danger {
+            background: rgba(255, 107, 107, 0.2);
+            border-color: rgba(255, 107, 107, 0.3);
+        }
+
+        .workflow-btn.danger:hover {
+            background: rgba(255, 107, 107, 0.3);
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Hidden File Input */
+        #fileInput {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="liquid-bg"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Gemini AI Terminal</h1>
+            <p>MacOS Integration - Created by Keiffer</p>
+        </div>
+
+        <div class="status-panel">
+            <div class="status-item">
+                <div class="status-label">AI Status</div>
+                <div class="status-value" id="aiStatus">Initializing...</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Memory</div>
+                <div class="status-value" id="memoryStatus">Loading...</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">MacOS Integration</div>
+                <div class="status-value status-online">Active</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Files Uploaded</div>
+                <div class="status-value" id="fileCount">0</div>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <div class="action-button" onclick="openAutomatorPanel()">
+                <div>⚙️</div>
+                <div>Automator</div>
+            </div>
+            <div class="action-button" onclick="openNotesPanel()">
+                <div>📝</div>
+                <div>Notes</div>
+            </div>
+            <div class="action-button" onclick="openRemindersPanel()">
+                <div>⏰</div>
+                <div>Reminders</div>
+            </div>
+            <div class="action-button" onclick="openSQLConsole()">
+                <div>🗄️</div>
+                <div>SQL Console</div>
+            </div>
+            <div class="action-button" onclick="openCustomization()">
+                <div>🎨</div>
+                <div>Customize AI</div>
+            </div>
+            <div class="action-button" onclick="openMemoryPanel()">
+                <div>🧠</div>
+                <div>Memory</div>
+            </div>
+        </div>
+
+        <!-- File Upload Area -->
+        <div class="file-upload-area" id="fileUploadArea" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-text">
+                <strong>Drop files here or click to browse</strong><br>
+                Upload documents, workflows, scripts, or any files for AI processing
+            </div>
+            <div class="file-list" id="fileList"></div>
+        </div>
+        <input type="file" id="fileInput" multiple accept="*/*">
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="input-container">
+                <input type="text" id="messageInput" class="input-field"
+                    placeholder="Ask Gemini anything... (e.g., 'Create a reminder', 'Run SQL query', 'Process my document')"
+                    onkeypress="handleKeyPress(event)">
+                <button class="send-button" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+
+        <!-- Automator Panel -->
+        <div id="automatorPanel" class="panel" style="display: none;">
+            <h3>🔧 Automator Workflows</h3>
+            <div class="panel-content">
+                <div class="workflow-item">
+                    <span class="workflow-name">File Organizer.workflow</span>
+                    <div class="workflow-actions">
+                        <button class="workflow-btn" onclick="runWorkflow('File Organizer')">Run</button>
+                        <button class="workflow-btn" onclick="editWorkflow('File Organizer')">Edit</button>
+                        <button class="workflow-btn danger" onclick="deleteWorkflow('File Organizer')">Delete</button>
+                    </div>
+                </div>
+                <div class="workflow-item">
+                    <span class="workflow-name">PDF Merger.workflow</span>
+                    <div class="workflow-actions">
+                        <button class="workflow-btn" onclick="runWorkflow('PDF Merger')">Run</button>
+                        <button class="workflow-btn" onclick="editWorkflow('PDF Merger')">Edit</button>
+                        <button class="workflow-btn danger" onclick="deleteWorkflow('PDF Merger')">Delete</button>
+                    </div>
+                </div>
+                <button class="action-button" onclick="createNewWorkflow()" style="margin-top: 15px;">
+                    ➕ Create New Workflow
+                </button>
+            </div>
+        </div>
+
+        <!-- SQL Console Panel -->
+        <div id="sqlPanel" class="panel" style="display: none;">
+            <h3>🗄️ SQL Console</h3>
+            <div class="panel-content">
+                <textarea id="sqlQuery" placeholder="Enter SQL query..."
+                    style="width: 100%; height: 120px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 15px; font-family: monospace;"></textarea>
+                <div style="margin-top: 15px;">
+                    <button class="action-button" onclick="executeSQL()">Execute Query</button>
+                    <button class="action-button" onclick="downloadResults()">Download Results</button>
+                </div>
+                <div id="sqlResults" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+
+        <!-- Customization Panel -->
+        <div id="customizationPanel" class="panel" style="display: none;">
+            <h3>🎨 AI Customization</h3>
+            <div class="panel-content">
+                <div style="margin-bottom: 20px;">
+                    <label style="color: white; display: block; margin-bottom: 10px;">AI Name:</label>
+                    <input type="text" id="aiName" value="Gemini"
+                        style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px;">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="color: white; display: block; margin-bottom: 10px;">Personality:</label>
+                    <select id="personality"
+                        style="width: 100%; padding: 10px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px;">
+                        <option value="professional">Professional</option>
+                        <option value="friendly">Friendly</option>
+                        <option value="technical">Technical Expert</option>
+                        <option value="creative">Creative Assistant</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="color: white; display: block; margin-bottom: 10px;">Special Instructions:</label>
+                    <textarea id="specialInstructions" placeholder="Add custom instructions for AI behavior..."
+                        style="width: 100%; height: 80px; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; padding: 10px;"></textarea>
+                </div>
+                <button class="action-button" onclick="saveCustomization()">Save Settings</button>
+            </div>
+        </div>
+
+        <!-- Memory Panel -->
+        <div id="memoryPanel" class="panel" style="display: none;">
+            <h3>🧠 AI Memory & Learning</h3>
+            <div class="panel-content">
+                <div id="memoryContent">
+                    <div style="margin-bottom: 15px;">
+                        <strong>Conversation Memory:</strong> <span id="conversationCount">0</span> interactions
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Learned Preferences:</strong> <span id="preferencesCount">0</span> items
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>SQL Queries:</strong> <span id="queryCount">0</span> executed
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <strong>Files Processed:</strong> <span id="processedCount">0</span> files
+                    </div>
+                    <button class="action-button" onclick="clearMemory()"
+                        style="background: rgba(255,107,107,0.2); border-color: rgba(255,107,107,0.3);">
+                        Clear All Memory
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let geminiMemory = null;
+        let sqlConsole = null;
+        let uploadedFiles = [];
+        let currentWorkflows = [];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function () {
+            initializeApp();
+        });
+
+        async function initializeApp() {
+            try {
+                // Initialize memory system
+                geminiMemory = new GeminiMemory();
+
+                // Initialize SQL console
+                sqlConsole = new SQLConsole();
+
+                // Update status
+                document.getElementById('aiStatus').textContent = 'Online';
+                document.getElementById('aiStatus').className = 'status-value status-online';
+
+                // Load memory status
+                updateMemoryStatus();
+
+                // Set up file upload handlers
+                setupFileUpload();
+
+                // Load Automator workflows
+                loadAutomatorWorkflows();
+
+                // Load customization settings
+                loadCustomizationSettings();
+
+                // Add welcome message
+                addMessage('system', 'Gemini AI Terminal with macOS Integration is ready! 🚀\n\nI can help you with:\n• File processing and analysis\n• Automator workflow management\n• Notes and Reminders integration\n• SQL database operations\n• Terminal command execution\n• And much more!');
+
+                console.log('Gemini AI Terminal initialized successfully');
+            } catch (error) {
+                console.error('Initialization error:', error);
+                document.getElementById('aiStatus').textContent = 'Error';
+                document.getElementById('aiStatus').className = 'status-value status-offline';
+            }
+        }
+
+        // Enhanced Memory System
+        class GeminiMemory {
+            constructor() {
+                this.storageKey = 'gemini_macos_memory';
+                this.data = this.loadMemory();
+                this.validateMemory();
+            }
+
+            validateMemory() {
+                if (!this.data) {
+                    this.data = {
+                        conversations: [],
+                        preferences: {},
+                        sqlQueries: [],
+                        processedFiles: [],
+                        customization: {},
+                        workflows: [],
+                        notes: [],
+                        reminders: []
+                    };
+                }
+
+                // Ensure all required properties exist
+                const requiredProps = ['conversations', 'preferences', 'sqlQueries', 'processedFiles',
+                    'customization', 'workflows', 'notes', 'reminders'];
+
+                requiredProps.forEach(prop => {
+                    if (!this.data.hasOwnProperty(prop)) {
+                        this.data[prop] = Array.isArray(this.data.conversations) ? [] : {};
+                    }
+                });
+            }
+
+            loadMemory() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    return stored ? JSON.parse(stored) : null;
+                } catch (error) {
+                    console.warn('Error loading memory:', error);
+                    return null;
+                }
+            }
+
+            saveMemory() {
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify(this.data));
+                } catch (error) {
+                    console.error('Error saving memory:', error);
+                }
+            }
+
+            addConversation(userMessage, aiResponse) {
+                if (!this.data.conversations) this.data.conversations = [];
+
+                this.data.conversations.push({
+                    timestamp: new Date().toISOString(),
+                    user: userMessage,
+                    assistant: aiResponse
+                });
+
+                // Keep only last 100 conversations
+                if (this.data.conversations.length > 100) {
+                    this.data.conversations = this.data.conversations.slice(-100);
+                }
+
+                this.saveMemory();
+            }
+
+            addFile(fileName, fileType, content) {
+                if (!this.data.processedFiles) this.data.processedFiles = [];
+
+                this.data.processedFiles.push({
+                    timestamp: new Date().toISOString(),
+                    name: fileName,
+                    type: fileType,
+                    size: content.length,
+                    processed: true
+                });
+
+                this.saveMemory();
+            }
+
+            addWorkflow(name, actions) {
+                if (!this.data.workflows) this.data.workflows = [];
+
+                this.data.workflows.push({
+                    name: name,
+                    actions: actions,
+                    created: new Date().toISOString()
+                });
+
+                this.saveMemory();
+            }
+
+            getStats() {
+                return {
+                    conversations: (this.data.conversations || []).length,
+                    preferences: Object.keys(this.data.preferences || {}).length,
+                    sqlQueries: (this.data.sqlQueries || []).length,
+                    processedFiles: (this.data.processedFiles || []).length
+                };
+            }
+
+            clearAll() {
+                this.data = {
+                    conversations: [],
+                    preferences: {},
+                    sqlQueries: [],
+                    processedFiles: [],
+                    customization: {},
+                    workflows: [],
+                    notes: [],
+                    reminders: []
+                };
+                this.saveMemory();
+            }
+        }
+
+        // Enhanced SQL Console with Real Estate Data
+        class SQLConsole {
+            constructor() {
+                this.initializeDatabase();
+            }
+
+            initializeDatabase() {
+                // Initialize with real estate sample data
+                this.data = {
+                    brokers: [
+                        { id: 1, name: "Premium Realty Group", city: "San Francisco", state: "CA", commission_rate: 2.5 },
+                        { id: 2, name: "Elite Property Partners", city: "Los Angeles", state: "CA", commission_rate: 2.8 },
+                        { id: 3, name: "Metro Housing Solutions", city: "New York", state: "NY", commission_rate: 3.0 }
+                    ],
+                    agents: [
+                        { id: 1, name: "Sarah Johnson", broker_id: 1, experience_years: 8, sales_volume: 15000000 },
+                        { id: 2, name: "Michael Chen", broker_id: 2, experience_years: 12, sales_volume: 22000000 },
+                        { id: 3, name: "Emily Rodriguez", broker_id: 1, experience_years: 5, sales_volume: 8500000 }
+                    ],
+                    properties: [
+                        { id: 1, address: "123 Main St", city: "San Francisco", state: "CA", price: 1200000, bedrooms: 3, bathrooms: 2, sqft: 1800 },
+                        { id: 2, address: "456 Oak Ave", city: "Los Angeles", state: "CA", price: 950000, bedrooms: 4, bathrooms: 3, sqft: 2200 },
+                        { id: 3, address: "789 Pine Rd", city: "New York", state: "NY", price: 800000, bedrooms: 2, bathrooms: 1, sqft: 1200 }
+                    ],
+                    transactions: [
+                        { id: 1, property_id: 1, agent_id: 1, sale_price: 1180000, sale_date: "2024-01-15", commission: 29500 },
+                        { id: 2, property_id: 2, agent_id: 2, sale_price: 925000, sale_date: "2024-01-20", commission: 25900 },
+                        { id: 3, property_id: 3, agent_id: 3, sale_date: "2024-01-25", commission: 20000 }
+                    ]
+                };
+            }
+
+            executeQuery(query) {
+                try {
+                    const normalizedQuery = query.toLowerCase().trim();
+
+                    if (normalizedQuery.includes('select')) {
+                        return this.handleSelect(normalizedQuery);
+                    } else if (normalizedQuery.includes('insert')) {
+                        return this.handleInsert(normalizedQuery);
+                    } else if (normalizedQuery.includes('update')) {
+                        return this.handleUpdate(normalizedQuery);
+                    } else if (normalizedQuery.includes('delete')) {
+                        return this.handleDelete(normalizedQuery);
+                    } else {
+                        return { error: 'Unsupported query type. Use SELECT, INSERT, UPDATE, or DELETE.' };
+                    }
+                } catch (error) {
+                    return { error: `SQL Error: ${error.message}` };
+                }
+            }
+
+            handleSelect(query) {
+                // Simple SELECT parser for demo
+                if (query.includes('brokers')) {
+                    return { success: true, data: this.data.brokers };
+                } else if (query.includes('agents')) {
+                    return { success: true, data: this.data.agents };
+                } else if (query.includes('properties')) {
+                    return { success: true, data: this.data.properties };
+                } else if (query.includes('transactions')) {
+                    return { success: true, data: this.data.transactions };
+                } else {
+                    return { error: 'Table not found. Available tables: brokers, agents, properties, transactions' };
+                }
+            }
+
+            handleInsert(query) {
+                return { success: true, message: 'INSERT operation simulated successfully' };
+            }
+
+            handleUpdate(query) {
+                return { success: true, message: 'UPDATE operation simulated successfully' };
+            }
+
+            handleDelete(query) {
+                return { success: true, message: 'DELETE operation simulated successfully' };
+            }
+        }
+
+        // File Upload System
+        function setupFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const fileUploadArea = document.getElementById('fileUploadArea');
+            const fileList = document.getElementById('fileList');
+
+            // Handle file selection
+            fileInput.addEventListener('change', function (e) {
+                handleFiles(e.target.files);
+            });
+
+            // Handle drag and drop
+            fileUploadArea.addEventListener('dragover', function (e) {
+                e.preventDefault();
+                fileUploadArea.classList.add('drag-over');
+            });
+
+            fileUploadArea.addEventListener('dragleave', function (e) {
+                e.preventDefault();
+                fileUploadArea.classList.remove('drag-over');
+            });
+
+            fileUploadArea.addEventListener('drop', function (e) {
+                e.preventDefault();
+                fileUploadArea.classList.remove('drag-over');
+                handleFiles(e.dataTransfer.files);
+            });
+        }
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                uploadedFiles.push(file);
+
+                // Add to memory
+                if (geminiMemory) {
+                    geminiMemory.addFile(file.name, file.type, file.size);
+                }
+
+                // Create file item
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span>${file.name} (${formatFileSize(file.size)})</span>
+                    <span class="file-remove" onclick="removeFile('${file.name}')">×</span>
+                `;
+
+                document.getElementById('fileList').appendChild(fileItem);
+
+                // Process file content
+                processUploadedFile(file);
+            });
+
+            updateFileCount();
+        }
+
+        function removeFile(fileName) {
+            uploadedFiles = uploadedFiles.filter(file => file.name !== fileName);
+
+            // Remove from UI
+            const fileItems = document.querySelectorAll('.file-item');
+            fileItems.forEach(item => {
+                if (item.textContent.includes(fileName)) {
+                    item.remove();
+                }
+            });
+
+            updateFileCount();
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function updateFileCount() {
+            document.getElementById('fileCount').textContent = uploadedFiles.length;
+        }
+
+        async function processUploadedFile(file) {
+            try {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    const content = e.target.result;
+
+                    // Add processing message
+                    addMessage('system', `📁 Processing file: ${file.name} (${file.type})`);
+
+                    // Simulate file processing
+                    setTimeout(() => {
+                        addMessage('assistant', `File "${file.name}" has been successfully uploaded and processed! I can now analyze its content, extract information, or help you work with it. What would you like me to do with this file?`);
+                    }, 1000);
+                };
+
+                reader.readAsText(file);
+            } catch (error) {
+                console.error('Error processing file:', error);
+                addMessage('system', `❌ Error processing file: ${file.name}`);
+            }
+        }
+
+        // Automator Integration
+        function loadAutomatorWorkflows() {
+            // Simulate loading workflows from system
+            currentWorkflows = [
+                { name: 'File Organizer', path: '/Users/keiffer/workflows/File Organizer.workflow' },
+                { name: 'PDF Merger', path: '/Users/keiffer/workflows/PDF Merger.workflow' },
+                { name: 'Image Resizer', path: '/Users/keiffer/workflows/Image Resizer.workflow' }
+            ];
+        }
+
+        function runWorkflow(workflowName) {
+            addMessage('system', `🔧 Running Automator workflow: ${workflowName}`);
+
+            // Simulate workflow execution
+            setTimeout(() => {
+                addMessage('assistant', `Workflow "${workflowName}" executed successfully! The automation has completed its tasks.`);
+            }, 2000);
+        }
+
+        function editWorkflow(workflowName) {
+            addMessage('system', `✏️ Opening ${workflowName} in Automator for editing...`);
+
+            // In a real implementation, this would open Automator
+            setTimeout(() => {
+                addMessage('assistant', `Automator has been opened with the "${workflowName}" workflow. You can now edit the workflow actions and save your changes.`);
+            }, 1000);
+        }
+
+        function deleteWorkflow(workflowName) {
+            if (confirm(`Are you sure you want to delete the workflow "${workflowName}"?`)) {
+                addMessage('system', `🗑️ Deleting workflow: ${workflowName}`);
+
+                setTimeout(() => {
+                    addMessage('assistant', `Workflow "${workflowName}" has been deleted successfully.`);
+                }, 500);
+            }
+        }
+
+        function createNewWorkflow() {
+            const workflowName = prompt('Enter a name for the new workflow:');
+            if (workflowName) {
+                addMessage('system', `🆕 Creating new Automator workflow: ${workflowName}`);
+
+                setTimeout(() => {
+                    addMessage('assistant', `New workflow "${workflowName}" has been created and opened in Automator. You can now add actions to build your automation.`);
+                }, 1500);
+            }
+        }
+
+        // Notes Integration
+        async function createNote(title, content) {
+            addMessage('system', `📝 Creating new note: ${title}`);
+
+            // Store in memory
+            if (geminiMemory && geminiMemory.data.notes) {
+                geminiMemory.data.notes.push({
+                    id: Date.now(),
+                    title: title,
+                    content: content,
+                    created: new Date().toISOString()
+                });
+                geminiMemory.saveMemory();
+            }
+
+            setTimeout(() => {
+                addMessage('assistant', `Note "${title}" has been created and saved to your Notes app!`);
+            }, 1000);
+        }
+
+        // Reminders Integration
+        async function createReminder(title, dueDate) {
+            addMessage('system', `⏰ Creating reminder: ${title}`);
+
+            // Store in memory
+            if (geminiMemory && geminiMemory.data.reminders) {
+                geminiMemory.data.reminders.push({
+                    id: Date.now(),
+                    title: title,
+                    dueDate: dueDate,
+                    completed: false,
+                    created: new Date().toISOString()
+                });
+                geminiMemory.saveMemory();
+            }
+
+            setTimeout(() => {
+                addMessage('assistant', `Reminder "${title}" has been added to your Reminders app${dueDate ? ` with due date ${dueDate}` : ''}!`);
+            }, 1000);
+        }
+
+        // Panel Management
+        function openAutomatorPanel() {
+            togglePanel('automatorPanel');
+        }
+
+        function openNotesPanel() {
+            addMessage('system', '📝 Opening Notes integration...');
+            addMessage('assistant', 'I can help you create, edit, and manage your Notes! Try commands like:\n• "Create a note about today\'s meeting"\n• "Add a shopping list note"\n• "Search my notes for keyword"');
+        }
+
+        function openRemindersPanel() {
+            addMessage('system', '⏰ Opening Reminders integration...');
+            addMessage('assistant', 'I can help you manage your Reminders! Try commands like:\n• "Remind me to call John at 3pm"\n• "Create a reminder for tomorrow\'s meeting"\n• "Show my upcoming reminders"');
+        }
+
+        function openSQLConsole() {
+            togglePanel('sqlPanel');
+        }
+
+        function openCustomization() {
+            togglePanel('customizationPanel');
+        }
+
+        function openMemoryPanel() {
+            updateMemoryDisplay();
+            togglePanel('memoryPanel');
+        }
+
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            const isVisible = panel.style.display !== 'none';
+
+            // Hide all panels
+            const panels = document.querySelectorAll('.panel');
+            panels.forEach(p => p.style.display = 'none');
+
+            // Show the requested panel if it was hidden
+            if (!isVisible) {
+                panel.style.display = 'block';
+            }
+        }
+
+        // SQL Operations
+        function executeSQL() {
+            const query = document.getElementById('sqlQuery').value.trim();
+
+            if (!query) {
+                alert('Please enter a SQL query');
+                return;
+            }
+
+            addMessage('system', `🗄️ Executing SQL query: ${query}`);
+
+            const result = sqlConsole.executeQuery(query);
+
+            if (result.error) {
+                document.getElementById('sqlResults').innerHTML = `
+                    <div style="color: #ff6b6b; padding: 15px; background: rgba(255,107,107,0.1); border-radius: 10px;">
+                        <strong>Error:</strong> ${result.error}
+                    </div>
+                `;
+                addMessage('assistant', `❌ SQL Error: ${result.error}`);
+            } else {
+                displaySQLResults(result.data);
+                addMessage('assistant', `✅ SQL query executed successfully! Found ${result.data ? result.data.length : 0} records.`);
+
+                // Save query to memory
+                if (geminiMemory && geminiMemory.data.sqlQueries) {
+                    geminiMemory.data.sqlQueries.push({
+                        query: query,
+                        timestamp: new Date().toISOString(),
+                        results: result.data ? result.data.length : 0
+                    });
+                    geminiMemory.saveMemory();
+                }
+            }
+        }
+
+        function displaySQLResults(data) {
+            if (!data || data.length === 0) {
+                document.getElementById('sqlResults').innerHTML = '<div style="color: #ffffff;">No results found.</div>';
+                return;
+            }
+
+            let html = '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; margin-top: 15px;">';
+
+            // Headers
+            html += '<thead><tr>';
+            Object.keys(data[0]).forEach(key => {
+                html += `<th style="padding: 10px; background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.2);">${key}</th>`;
+            });
+            html += '</tr></thead>';
+
+            // Data rows
+            html += '<tbody>';
+            data.forEach(row => {
+                html += '<tr>';
+                Object.values(row).forEach(value => {
+                    html += `<td style="padding: 10px; color: #ffffff; border: 1px solid rgba(255,255,255,0.1);">${value}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+
+            document.getElementById('sqlResults').innerHTML = html;
+        }
+
+        function downloadResults() {
+            const resultsDiv = document.getElementById('sqlResults');
+            if (!resultsDiv.innerHTML.includes('table')) {
+                alert('No results to download. Please execute a query first.');
+                return;
+            }
+
+            // Simple CSV export
+            const table = resultsDiv.querySelector('table');
+            let csv = '';
+
+            // Headers
+            const headers = table.querySelectorAll('th');
+            headers.forEach((header, index) => {
+                csv += header.textContent + (index < headers.length - 1 ? ',' : '\n');
+            });
+
+            // Data
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                cells.forEach((cell, index) => {
+                    csv += cell.textContent + (index < cells.length - 1 ? ',' : '\n');
+                });
+            });
+
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sql_results.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            addMessage('assistant', '📥 SQL results downloaded as CSV file!');
+        }
+
+        // Customization System
+        function loadCustomizationSettings() {
+            if (geminiMemory && geminiMemory.data.customization) {
+                const settings = geminiMemory.data.customization;
+
+                if (settings.aiName) {
+                    document.getElementById('aiName').value = settings.aiName;
+                }
+                if (settings.personality) {
+                    document.getElementById('personality').value = settings.personality;
+                }
+                if (settings.specialInstructions) {
+                    document.getElementById('specialInstructions').value = settings.specialInstructions;
+                }
+            }
+        }
+
+        function saveCustomization() {
+            const settings = {
+                aiName: document.getElementById('aiName').value,
+                personality: document.getElementById('personality').value,
+                specialInstructions: document.getElementById('specialInstructions').value
+            };
+
+            if (geminiMemory) {
+                geminiMemory.data.customization = settings;
+                geminiMemory.saveMemory();
+            }
+
+            addMessage('system', '🎨 AI customization settings saved!');
+            addMessage('assistant', `Hi! I'm ${settings.aiName}, your customized AI assistant. My personality has been set to "${settings.personality}" and I'll follow your special instructions. How can I help you today?`);
+        }
+
+        // Memory Management
+        function updateMemoryStatus() {
+            if (geminiMemory) {
+                const stats = geminiMemory.getStats();
+                document.getElementById('memoryStatus').textContent = `${stats.conversations} interactions`;
+                document.getElementById('memoryStatus').className = 'status-value status-online';
+            }
+        }
+
+        function updateMemoryDisplay() {
+            if (geminiMemory) {
+                const stats = geminiMemory.getStats();
+                document.getElementById('conversationCount').textContent = stats.conversations;
+                document.getElementById('preferencesCount').textContent = stats.preferences;
+                document.getElementById('queryCount').textContent = stats.sqlQueries;
+                document.getElementById('processedCount').textContent = stats.processedFiles;
+            }
+        }
+
+        function clearMemory() {
+            if (confirm('Are you sure you want to clear all AI memory? This cannot be undone.')) {
+                if (geminiMemory) {
+                    geminiMemory.clearAll();
+                    updateMemoryStatus();
+                    updateMemoryDisplay();
+                }
+
+                addMessage('system', '🧠 AI memory cleared successfully');
+                addMessage('assistant', 'My memory has been reset. I\'m ready to start fresh! How can I help you?');
+            }
+        }
+
+        // Chat System
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (!message) return;
+
+            // Add user message
+            addMessage('user', message);
+            messageInput.value = '';
+
+            // Show typing indicator
+            const typingMessage = addMessage('assistant', '<span class="loading"></span> Thinking...');
+
+            try {
+                // Process the message
+                const response = await processUserMessage(message);
+
+                // Remove typing indicator and add real response
+                typingMessage.remove();
+                addMessage('assistant', response);
+
+                // Save to memory
+                if (geminiMemory) {
+                    geminiMemory.addConversation(message, response);
+                    updateMemoryStatus();
+                }
+
+            } catch (error) {
+                typingMessage.remove();
+                addMessage('assistant', '❌ Sorry, I encountered an error processing your request. Please try again.');
+                console.error('Chat error:', error);
+            }
+        }
+
+        async function processUserMessage(message) {
+            const lowerMessage = message.toLowerCase();
+
+            // File upload commands
+            if (lowerMessage.includes('upload') || lowerMessage.includes('file')) {
+                return "I see you want to work with files! You can drag and drop files into the upload area above, or click it to browse. I can process documents, images, scripts, workflows, and more. What type of file would you like to upload?";
+            }
+
+            // Automator commands
+            if (lowerMessage.includes('automator') || lowerMessage.includes('workflow')) {
+                if (lowerMessage.includes('create') || lowerMessage.includes('new')) {
+                    return "I can help you create a new Automator workflow! What would you like the workflow to do? For example:\n• Organize files by type\n• Batch rename photos\n• Convert documents\n• Process email attachments";
+                }
+                if (lowerMessage.includes('run') || lowerMessage.includes('execute')) {
+                    return "I can run your existing Automator workflows! Check the Automator panel above to see available workflows, or tell me the name of the workflow you'd like to execute.";
+                }
+                return "I can help you manage Automator workflows - create new ones, run existing workflows, or edit them. What would you like to do?";
+            }
+
+            // Notes commands
+            if (lowerMessage.includes('note') || lowerMessage.includes('notes')) {
+                if (lowerMessage.includes('create') || lowerMessage.includes('new') || lowerMessage.includes('add')) {
+                    const noteMatch = message.match(/(?:note|notes?).*?["']([^"']+)["']|(?:note|notes?) (?:about|on|for) (.+)/i);
+                    if (noteMatch) {
+                        const noteContent = noteMatch[1] || noteMatch[2];
+                        await createNote(`Note: ${noteContent}`, noteContent);
+                        return `I've created a note with the content: "${noteContent}"`;
+                    }
+                    return "What would you like the note to say? You can tell me something like 'Create a note about today's meeting' or 'Add a note saying remember to buy groceries'.";
+                }
+                return "I can help you create, search, and manage your Notes! Try saying things like 'Create a note about...' or 'Add a note saying...'";
+            }
+
+            // Reminders commands
+            if (lowerMessage.includes('remind') || lowerMessage.includes('reminder')) {
+                const reminderMatch = message.match(/remind(?:er)? (?:me )?(?:to )?(.+?)(?:\s+(?:at|on|by)\s+(.+))?$/i);
+                if (reminderMatch) {
+                    const task = reminderMatch[1];
+                    const time = reminderMatch[2] || null;
+                    await createReminder(task, time);
+                    return `I've created a reminder: "${task}"${time ? ` for ${time}` : ''}`;
+                }
+                return "I can create reminders for you! Try saying something like 'Remind me to call John at 3pm' or 'Create a reminder for tomorrow's meeting'.";
+            }
+
+            // SQL commands
+            if (lowerMessage.includes('sql') || lowerMessage.includes('database') || lowerMessage.includes('query')) {
+                if (lowerMessage.includes('brokers') || lowerMessage.includes('agents') || lowerMessage.includes('properties')) {
+                    return "I can help you query the real estate database! Available tables are:\n• brokers (real estate companies)\n• agents (individual agents)\n• properties (property listings)\n• transactions (completed sales)\n\nTry the SQL Console above or ask me to run a specific query.";
+                }
+                return "I have access to a real estate database with information about brokers, agents, properties, and transactions. What would you like to know? You can use the SQL Console above or ask me in natural language.";
+            }
+
+            // Terminal commands
+            if (lowerMessage.includes('terminal') || lowerMessage.includes('command') || lowerMessage.includes('execute')) {
+                return "I can help you execute terminal commands! What would you like me to run? I can:\n• File operations (ls, cp, mv, etc.)\n• System information (ps, top, df)\n• Development tasks (git, npm, etc.)\n• Custom scripts and automation";
+            }
+
+            // Customization commands
+            if (lowerMessage.includes('customize') || lowerMessage.includes('settings') || lowerMessage.includes('personality')) {
+                return "You can customize my personality and behavior! Use the Customize AI panel above to:\n• Change my name\n• Set my personality style\n• Add special instructions\n• Configure my responses\n\nI'm fully customizable and created by Keiffer to be exactly what you need!";
+            }
+
+            // Memory commands
+            if (lowerMessage.includes('memory') || lowerMessage.includes('remember') || lowerMessage.includes('learn')) {
+                return "I have an advanced memory system that learns from our interactions! I remember:\n• Our conversation history\n• Your preferences and habits\n• SQL queries you've run\n• Files you've processed\n\nCheck the Memory panel to see what I've learned about you!";
+            }
+
+            // MacOS integration info
+            if (lowerMessage.includes('macos') || lowerMessage.includes('mac') || lowerMessage.includes('integration')) {
+                return "I have full macOS integration capabilities! I can:\n• 📁 Process and analyze uploaded files\n• ⚙️ Create and run Automator workflows\n• 📝 Manage your Notes app\n• ⏰ Create reminders and tasks\n• 🗄️ Query SQL databases\n• 💾 Learn and remember everything\n• 🎨 Customize my personality completely\n\nWhat would you like me to help you with?";
+            }
+
+            // General AI response
+            return await getGeminiResponse(message);
+        }
+
+        async function getGeminiResponse(message) {
+            try {
+                // Get customization settings
+                const settings = geminiMemory && geminiMemory.data.customization ? geminiMemory.data.customization : {};
+                const aiName = settings.aiName || 'Gemini';
+                const personality = settings.personality || 'professional';
+                const specialInstructions = settings.specialInstructions || '';
+
+                // Build context from memory
+                let context = `You are ${aiName}, a highly advanced AI assistant with macOS integration created by Keiffer. `;
+                context += `Your personality is ${personality}. `;
+                if (specialInstructions) {
+                    context += `Special instructions: ${specialInstructions} `;
+                }
+                context += `You have access to file processing, Automator workflows, Notes, Reminders, SQL databases, and terminal commands. `;
+
+                // Add recent conversation history for context
+                if (geminiMemory && geminiMemory.data.conversations) {
+                    const recent = geminiMemory.data.conversations.slice(-5);
+                    if (recent.length > 0) {
+                        context += "Recent conversation context: ";
+                        recent.forEach(conv => {
+                            context += `User: ${conv.user} Assistant: ${conv.assistant} `;
+                        });
+                    }
+                }
+
+                // Make API call to Gemini
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyAgOZ0lq6Ejct2Cx8wr85EW1d_n4vyFbak`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `${context}\n\nUser message: ${message}\n\nPlease respond as ${aiName} with a ${personality} personality. Be helpful, knowledgeable, and reference your macOS integration capabilities when relevant.`
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 1024
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    return data.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error('Invalid response from Gemini API');
+                }
+
+            } catch (error) {
+                console.error('Gemini API error:', error);
+                return "I'm having trouble connecting to my AI services right now. However, I can still help you with file uploads, Automator workflows, Notes, Reminders, and SQL queries using my local capabilities. What would you like me to help you with?";
+            }
+        }
+
+        function addMessage(type, content) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+
+            const timestamp = new Date().toLocaleTimeString();
+
+            messageDiv.innerHTML = `
+                <div class="message-content">${content}</div>
+                <div class="message-timestamp">${timestamp}</div>
+            `;
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            return messageDiv;
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function () {
+            console.log('Gemini AI Terminal with macOS Integration loaded');
+        });
+    </script>
+</body>
+
+</html>

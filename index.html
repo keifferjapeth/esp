@@ -80,9 +80,17 @@
         }
 
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         .chat-container {
@@ -107,6 +115,7 @@
                 opacity: 0;
                 transform: translateY(10px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -258,24 +267,27 @@
 
         <div class="glass-card">
             <h3>🎯 AI Command Console</h3>
-            
+
             <div class="chat-container" id="chatContainer">
                 <div class="message assistant">
-                    🚀 Crystal AI Console is now running in the cloud! All real APIs are connected and ready. Try these commands:
-                    <br><br>
-                    • <strong>tilda projects</strong> - List your Tilda projects
-                    • <strong>gemini hello world</strong> - Test Gemini AI
-                    • <strong>test all</strong> - Run full system test
-                    • <strong>help</strong> - Show all commands
+                    🚀 <strong>Crystal AI Console is live in the cloud!</strong> All real APIs connected and
+                    ready.<br><br>
+                    💬 <strong>Chat naturally!</strong> I understand normal conversation:<br>
+                    • Say <strong>"hi"</strong> or <strong>"hello"</strong> to start chatting<br>
+                    • Ask <strong>any question</strong> - I'll answer via Gemini AI<br>
+                    • Type <strong>"tilda projects"</strong> to see your websites<br>
+                    • Try <strong>"test all"</strong> to check all services<br>
+                    • Say <strong>"help"</strong> or <strong>"?"</strong> for more options<br><br>
+                    <em>🎯 Just type like you're texting a friend - I'll understand!</em>
                 </div>
             </div>
 
             <div class="input-container">
-                <input type="text" class="input-field" id="commandInput" 
-                       placeholder="Enter AI command (e.g., 'tilda projects', 'gemini hello')..." 
-                       onkeypress="handleKeyPress(event)">
+                <input type="text" class="input-field" id="commandInput"
+                    placeholder="Just type naturally! Say 'hi', ask questions, or try 'tilda projects'..."
+                    onkeypress="handleKeyPress(event)">
                 <button class="send-button" id="sendButton" onclick="executeCommand()">
-                    Send Command
+                    Send Message
                 </button>
             </div>
         </div>
@@ -306,7 +318,7 @@
 
         // Update timestamp
         function updateTimestamp() {
-            document.getElementById('timestamp').textContent = 
+            document.getElementById('timestamp').textContent =
                 new Date().toLocaleTimeString();
         }
         setInterval(updateTimestamp, 1000);
@@ -346,7 +358,7 @@
 
             const input = document.getElementById('commandInput');
             const command = input.value.trim().toLowerCase();
-            
+
             if (!command) return;
 
             // Clear input and show processing
@@ -361,7 +373,7 @@
 
             try {
                 let result = await executeRealCommand(command);
-                
+
                 // Display result
                 addMessage(result, 'assistant');
                 addTerminalLine('✅ Command completed successfully', '#00ff88');
@@ -375,28 +387,83 @@
             }
         }
 
-        // Execute real commands with direct API calls
+        // Execute real commands with intelligent parsing
         async function executeRealCommand(command) {
-            if (command.includes('tilda')) {
-                if (command.includes('projects') || command.includes('status')) {
-                    return await getTildaProjects();
-                }
-            } else if (command.includes('gemini') || command.includes('ai')) {
-                const prompt = command.replace(/gemini|ai/g, '').trim() || 'Hello from Crystal AI Console in the cloud!';
-                return await callGeminiAI(prompt);
-            } else if (command.includes('test')) {
+            // Smart command detection - more conversational approach
+            const lowerCmd = command.toLowerCase();
+
+            // Tilda commands
+            if (lowerCmd.includes('tilda') || lowerCmd.includes('projects') || lowerCmd.includes('websites')) {
+                return await getTildaProjects();
+            }
+
+            // Test commands
+            else if (lowerCmd.includes('test') && lowerCmd.includes('all')) {
                 return await testAllServices();
-            } else if (command.includes('help')) {
+            }
+
+            // Help commands - multiple variations
+            else if (lowerCmd.includes('help') || lowerCmd === '?' || lowerCmd.includes('commands') || lowerCmd.includes('what can')) {
                 return `
-                    <strong>🎯 Available Commands:</strong><br>
+                    <strong>🎯 Crystal AI Console Commands:</strong><br>
                     • <strong>tilda projects</strong> - List Tilda projects<br>
-                    • <strong>gemini [prompt]</strong> - Call Gemini AI<br>
+                    • <strong>gemini [anything]</strong> - Chat with Gemini AI<br>
                     • <strong>test all</strong> - Test all services<br>
-                    • <strong>help</strong> - Show this help<br><br>
-                    <em>All commands use real APIs and cloud integration!</em>
+                    • <strong>help</strong> or <strong>?</strong> - Show this help<br><br>
+                    <strong>💡 Pro Tips:</strong><br>
+                    • Just type naturally! I understand conversational input<br>
+                    • Say "hi", "hello", or any greeting to chat with Gemini<br>
+                    • Ask questions directly - I'll send them to Gemini AI<br>
+                    <em>🚀 All powered by real cloud APIs!</em>
                 `;
-            } else {
-                return `❓ Unknown command: "${command}". Type "help" for available commands.`;
+            }
+
+            // Gemini AI commands - much more flexible detection
+            else if (
+                lowerCmd.includes('gemini') ||
+                lowerCmd.includes('ai') ||
+                lowerCmd.includes('hello') ||
+                lowerCmd.includes('hi') ||
+                lowerCmd.includes('how are you') ||
+                lowerCmd.includes('what') ||
+                lowerCmd.includes('why') ||
+                lowerCmd.includes('when') ||
+                lowerCmd.includes('where') ||
+                lowerCmd.includes('who') ||
+                lowerCmd.includes('can you') ||
+                lowerCmd.includes('tell me') ||
+                lowerCmd.includes('explain') ||
+                lowerCmd.includes('good') ||
+                lowerCmd.includes('thanks') ||
+                lowerCmd.includes('thank you') ||
+                lowerCmd.includes('bye') ||
+                lowerCmd.includes('question') ||
+                lowerCmd === 'yes' ||
+                lowerCmd === 'no' ||
+                lowerCmd.length > 3 // Any substantial text defaults to Gemini
+            ) {
+                // Clean up the prompt by removing "gemini" if present
+                let prompt = command.replace(/^(gemini|ai)\s*/i, '').trim();
+                if (!prompt) prompt = command; // Use original if nothing left
+
+                // Add context for better responses
+                if (lowerCmd.includes('hi') || lowerCmd.includes('hello')) {
+                    prompt = `${prompt} (I'm using the Crystal AI Console in the cloud!)`;
+                }
+
+                return await callGeminiAI(prompt);
+            }
+
+            // Default - for very short or unclear commands
+            else {
+                return `
+                    <strong>🤔 Not sure what you mean by "${command}"</strong><br>
+                    Try these:<br>
+                    • Just say <strong>"hi"</strong> or ask any question - I'll chat with Gemini AI<br>
+                    • Type <strong>"tilda projects"</strong> to see your websites<br>
+                    • Type <strong>"help"</strong> or <strong>"?"</strong> for all commands<br>
+                    <em>💡 I understand natural language - just type normally!</em>
+                `;
             }
         }
 
@@ -405,7 +472,7 @@
             try {
                 const response = await fetch(`https://builder.tildacdn.com/v1/getprojectslist/?key=${CLOUD_CONFIG.tildaApiKey}`);
                 const data = await response.json();
-                
+
                 if (data.status === 'FOUND') {
                     const projects = data.result;
                     let result = `<strong>🎨 Tilda Projects (${projects.length} found):</strong><br>`;
@@ -432,10 +499,10 @@
                         generationConfig: { temperature: 0.7, maxOutputTokens: 200 }
                     })
                 });
-                
+
                 const data = await response.json();
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response';
-                
+
                 return `<strong>🤖 Gemini AI:</strong><br>${text}`;
             } catch (error) {
                 return `❌ Gemini AI error: ${error.message}`;
@@ -445,9 +512,9 @@
         // Test all services
         async function testAllServices() {
             addTerminalLine('🧪 Testing all cloud services...', '#00d9ff');
-            
+
             let results = '<strong>🧪 Cloud Service Test Results:</strong><br>';
-            
+
             // Test Tilda
             try {
                 await getTildaProjects();
@@ -457,7 +524,7 @@
                 results += '• Tilda CMS: ❌ Error<br>';
                 addTerminalLine('❌ Tilda API test failed', '#ff6b6b');
             }
-            
+
             // Test Gemini
             try {
                 await callGeminiAI('Test connection');
@@ -467,7 +534,7 @@
                 results += '• Gemini AI: ❌ Error<br>';
                 addTerminalLine('❌ Gemini AI test failed', '#ff6b6b');
             }
-            
+
             results += '<br>🚀 Crystal AI Console is fully operational in the cloud!';
             return results;
         }
@@ -477,4 +544,5 @@
         addTerminalLine('💎 All real APIs connected and ready for commands');
     </script>
 </body>
+
 </html>

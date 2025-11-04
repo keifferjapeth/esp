@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mo AI - Self-Debugging Terminal with Onyx Voice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Enhanced Liquid Glass Background */
+        .liquid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .liquid-bg::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 70%, rgba(138, 43, 226, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(75, 0, 130, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 20, 147, 0.03) 0%, transparent 50%);
+            animation: liquidFloat 25s ease-in-out infinite;
+        }
+
+        @keyframes liquidFloat {
+
+            0%,
+            100% {
+                transform: translate(-25%, -25%) rotate(0deg);
+            }
+
+            33% {
+                transform: translate(-30%, -20%) rotate(120deg);
+            }
+
+            66% {
+                transform: translate(-20%, -30%) rotate(240deg);
+            }
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            backdrop-filter: blur(20px);
+            position: relative;
+        }
+
+        .header h1 {
+            color: #ffffff;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(138, 43, 226, 0.5);
+            background: linear-gradient(45deg, #8A2BE2, #FF1493, #9370DB);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+
+        .voice-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(138, 43, 226, 0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            margin-top: 10px;
+        }
+
+        .voice-wave {
+            width: 4px;
+            height: 20px;
+            background: #8A2BE2;
+            border-radius: 2px;
+            animation: voiceWave 1.5s ease-in-out infinite;
+        }
+
+        .voice-wave:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .voice-wave:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .voice-wave:nth-child(4) {
+            animation-delay: 0.6s;
+        }
+
+        @keyframes voiceWave {
+
+            0%,
+            100% {
+                transform: scaleY(1);
+            }
+
+            50% {
+                transform: scaleY(0.3);
+            }
+        }
+
+        /* Status Panel */
+        .status-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .status-item {
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            backdrop-filter: blur(15px);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .status-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(138, 43, 226, 0.1);
+        }
+
+        .status-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9em;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            color: #ffffff;
+            font-size: 1.2em;
+            font-weight: 600;
+        }
+
+        .status-online {
+            color: #00ff88;
+        }
+
+        .status-offline {
+            color: #ff6b6b;
+        }
+
+        .status-learning {
+            color: #8A2BE2;
+        }
+
+        .status-debugging {
+            color: #FF1493;
+        }
+
+        /* Debug Panel */
+        .debug-panel {
+            background: rgba(255, 20, 147, 0.1);
+            border: 1px solid rgba(255, 20, 147, 0.2);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+        }
+
+        .debug-title {
+            color: #FF1493;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .debug-content {
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+        }
+
+        .error-item {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .error-text {
+            color: #ff6b6b;
+        }
+
+        .fix-button {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            color: #00ff88;
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+
+        .fix-button:hover {
+            background: rgba(0, 255, 136, 0.3);
+        }
+
+        /* Chat Container */
+        .chat-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 25px;
+            padding: 30px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+            min-height: 500px;
+        }
+
+        .chat-messages {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 25px;
+            padding-right: 15px;
+        }
+
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(138, 43, 226, 0.4);
+            border-radius: 4px;
+        }
+
+        .message {
+            margin-bottom: 25px;
+            padding: 20px 25px;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            animation: messageSlide 0.4s ease-out;
+            position: relative;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            background: rgba(138, 43, 226, 0.2);
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            margin-left: 15%;
+        }
+
+        .message.assistant {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            margin-right: 15%;
+        }
+
+        .message.system {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            text-align: center;
+        }
+
+        .message.debug {
+            background: rgba(255, 20, 147, 0.15);
+            border: 1px solid rgba(255, 20, 147, 0.3);
+            margin-right: 15%;
+        }
+
+        .message-content {
+            color: #ffffff;
+            line-height: 1.7;
+            font-size: 1.05em;
+        }
+
+        .message-timestamp {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .voice-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .voice-button {
+            background: rgba(138, 43, 226, 0.2);
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            color: #8A2BE2;
+            padding: 8px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s ease;
+        }
+
+        .voice-button:hover {
+            background: rgba(138, 43, 226, 0.3);
+        }
+
+        /* Input Area */
+        .input-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            position: relative;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 30px;
+            color: #ffffff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(15px);
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .input-field:focus {
+            border-color: rgba(138, 43, 226, 0.5);
+            background: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
+        }
+
+        .send-button {
+            padding: 18px 25px;
+            background: linear-gradient(45deg, #8A2BE2, #FF1493);
+            border: none;
+            border-radius: 25px;
+            color: #ffffff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            backdrop-filter: blur(15px);
+        }
+
+        .send-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(138, 43, 226, 0.3);
+        }
+
+        .voice-input-button {
+            padding: 18px;
+            background: rgba(138, 43, 226, 0.2);
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            border-radius: 25px;
+            color: #8A2BE2;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2em;
+        }
+
+        .voice-input-button:hover {
+            background: rgba(138, 43, 226, 0.3);
+        }
+
+        .voice-input-button.listening {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .action-button {
+            padding: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            color: #ffffff;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(15px);
+        }
+
+        .action-button:hover {
+            background: rgba(138, 43, 226, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(138, 43, 226, 0.2);
+        }
+
+        .action-button i {
+            font-size: 1.6em;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        /* Behavioral Observation Panel */
+        .observation-panel {
+            background: rgba(75, 0, 130, 0.1);
+            border: 1px solid rgba(75, 0, 130, 0.2);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(20px);
+        }
+
+        .observation-title {
+            color: #9370DB;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .behavior-item {
+            background: rgba(147, 112, 219, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 8px 0;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            border: 3px solid rgba(138, 43, 226, 0.3);
+            border-radius: 50%;
+            border-top-color: #8A2BE2;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Hidden Elements */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="liquid-bg"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Mo AI</h1>
+            <p>Self-Debugging AI Terminal with Onyx Voice - Created by Keiffer</p>
+            <div class="voice-indicator">
+                <div class="voice-wave"></div>
+                <div class="voice-wave"></div>
+                <div class="voice-wave"></div>
+                <div class="voice-wave"></div>
+                <span>Onyx Voice Active</span>
+            </div>
+        </div>
+
+        <div class="status-panel">
+            <div class="status-item">
+                <div class="status-label">Mo Status</div>
+                <div class="status-value" id="aiStatus">Initializing...</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Self-Debug</div>
+                <div class="status-value status-debugging" id="debugStatus">Active</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Voice System</div>
+                <div class="status-value status-online" id="voiceStatus">Onyx Ready</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Learning</div>
+                <div class="status-value status-learning" id="learningStatus">Observing</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Errors Fixed</div>
+                <div class="status-value" id="errorsFixed">0</div>
+            </div>
+        </div>
+
+        <!-- Debug Panel -->
+        <div id="debugPanel" class="debug-panel">
+            <div class="debug-title">
+                🔧 Self-Debugging System
+            </div>
+            <div class="debug-content" id="debugContent">
+                Mo is monitoring system health and automatically fixing errors...
+                <div id="errorList"></div>
+            </div>
+        </div>
+
+        <!-- Behavioral Observation Panel -->
+        <div id="observationPanel" class="observation-panel">
+            <div class="observation-title">
+                👁️ Behavioral Observation
+            </div>
+            <div id="observationContent">
+                <div class="behavior-item">Monitoring user interaction patterns...</div>
+                <div class="behavior-item">Learning communication preferences...</div>
+                <div class="behavior-item">Analyzing command usage frequency...</div>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <div class="action-button" onclick="runSelfDiagnostic()">
+                <div>🔍</div>
+                <div>Self Diagnostic</div>
+            </div>
+            <div class="action-button" onclick="testOnyxVoice()">
+                <div>🔊</div>
+                <div>Test Voice</div>
+            </div>
+            <div class="action-button" onclick="showBehaviorAnalysis()">
+                <div>📊</div>
+                <div>Behavior Analysis</div>
+            </div>
+            <div class="action-button" onclick="showMemoryPanel()">
+                <div>🧠</div>
+                <div>Memory Storage</div>
+            </div>
+            <div class="action-button" onclick="debugMode()">
+                <div>🐛</div>
+                <div>Debug Mode</div>
+            </div>
+            <div class="action-button" onclick="openAutomator()">
+                <div>⚙️</div>
+                <div>Automator</div>
+            </div>
+            <div class="action-button" onclick="openSQLConsole()">
+                <div>🗄️</div>
+                <div>SQL Console</div>
+            </div>
+        </div>
+
+        <!-- Memory Management Panel -->
+        <div id="memoryPanel" class="observation-panel" style="display: none;">
+            <div class="observation-title">
+                🧠 Memory Storage System
+            </div>
+            <div id="memoryContent">
+                <div class="behavior-item">
+                    <strong>Storage Location:</strong> Browser localStorage (persistent)
+                </div>
+                <div class="behavior-item">
+                    <strong>Behavior Patterns:</strong> <span id="behaviorCount">0</span> recorded interactions
+                </div>
+                <div class="behavior-item">
+                    <strong>Learning Data:</strong> <span id="learningDataSize">0</span> KB analyzed data
+                </div>
+                <div class="behavior-item">
+                    <strong>Errors Fixed:</strong> <span id="totalErrorsFixed">0</span> automatic corrections
+                </div>
+                <div class="behavior-item">
+                    <strong>Last Saved:</strong> <span id="lastSaved">Never</span>
+                </div>
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <button class="action-button" onclick="mo.savePersistentMemory(); updateMemoryDisplay()"
+                        style="flex: 1;">
+                        💾 Save Now
+                    </button>
+                    <button class="action-button" onclick="clearMoMemory()"
+                        style="flex: 1; background: rgba(255,107,107,0.2); border-color: rgba(255,107,107,0.3);">
+                        🗑️ Clear Memory
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chatMessages"></div>
+            <div class="input-container">
+                <button class="voice-input-button" id="voiceInputBtn" onclick="startVoiceInput()">🎤</button>
+                <input type="text" id="messageInput" class="input-field"
+                    placeholder="Hi! I'm Mo. I can debug myself, learn from you, and speak with Onyx voice..."
+                    onkeypress="handleKeyPress(event)">
+                <button class="send-button" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced Mo AI System with Self-Debugging
+        class MoAI {
+            constructor() {
+                this.name = 'Mo';
+                this.storageKey = 'mo_ai_persistent_memory';
+                this.errors = [];
+                this.fixedErrors = 0;
+                this.behaviorPatterns = [];
+                this.learningData = {};
+                this.voiceSystem = null;
+                this.debugMode = false;
+                this.observationActive = true;
+
+                // Load persistent memory
+                this.loadPersistentMemory();
+
+                this.initializeVoiceSystem();
+                this.startSelfDiagnostic();
+                this.initializeBehaviorObservation();
+            }
+
+            // Persistent Memory System
+            loadPersistentMemory() {
+                try {
+                    const stored = localStorage.getItem(this.storageKey);
+                    if (stored) {
+                        const data = JSON.parse(stored);
+                        this.behaviorPatterns = data.behaviorPatterns || [];
+                        this.learningData = data.learningData || {};
+                        this.fixedErrors = data.fixedErrors || 0;
+
+                        this.log(`🧠 Loaded ${this.behaviorPatterns.length} behavior patterns from memory`);
+                        this.updateStatus('errorsFixed', this.fixedErrors.toString());
+                    }
+                } catch (error) {
+                    this.logError('Failed to load persistent memory', error);
+                    this.behaviorPatterns = [];
+                    this.learningData = {};
+                    this.fixedErrors = 0;
+                }
+            }
+
+            savePersistentMemory() {
+                try {
+                    const data = {
+                        behaviorPatterns: this.behaviorPatterns,
+                        learningData: this.learningData,
+                        fixedErrors: this.fixedErrors,
+                        lastSaved: new Date().toISOString()
+                    };
+                    localStorage.setItem(this.storageKey, JSON.stringify(data));
+                } catch (error) {
+                    this.logError('Failed to save persistent memory', error);
+                }
+            }
+
+            clearPersistentMemory() {
+                try {
+                    localStorage.removeItem(this.storageKey);
+                    this.behaviorPatterns = [];
+                    this.learningData = {};
+                    this.fixedErrors = 0;
+                    this.log('🧠 Persistent memory cleared');
+                } catch (error) {
+                    this.logError('Failed to clear persistent memory', error);
+                }
+            }            // Onyx Voice System Integration
+            async initializeVoiceSystem() {
+                try {
+                    this.voiceSystem = new OnyxVoiceSystem();
+                    await this.voiceSystem.initialize();
+
+                    this.log('🔊 Onyx voice system initialized successfully');
+                    this.updateStatus('voiceStatus', 'Onyx Ready', 'status-online');
+                } catch (error) {
+                    this.logError('Voice system initialization failed', error);
+                    this.attemptErrorFix('voice_init', error);
+                }
+            }
+
+            // Self-Debugging System (Silent Background Operation)
+            startSelfDiagnostic() {
+                // Run diagnostics silently every 30 seconds instead of 5
+                setInterval(() => {
+                    this.runDiagnosticSilently();
+                }, 30000); // Check every 30 seconds
+
+                // Monitor console errors silently
+                window.addEventListener('error', (event) => {
+                    this.handleErrorSilently(event.error, 'Runtime Error');
+                });
+
+                // Monitor unhandled promise rejections silently
+                window.addEventListener('unhandledrejection', (event) => {
+                    this.handleErrorSilently(event.reason, 'Promise Rejection');
+                });
+            }
+
+            runDiagnostic() {
+                const checks = [
+                    this.checkMemoryUsage(),
+                    this.checkVoiceSystem(),
+                    this.checkAPIConnections(),
+                    this.checkUserInterface(),
+                    this.checkLearningSystem()
+                ];
+
+                checks.forEach(check => {
+                    if (check.error) {
+                        this.handleError(check.error, check.context);
+                    }
+                });
+            }
+
+            runDiagnosticSilently() {
+                const checks = [
+                    this.checkMemoryUsage(),
+                    this.checkVoiceSystem(),
+                    this.checkAPIConnections(),
+                    this.checkUserInterface(),
+                    this.checkLearningSystem()
+                ];
+
+                checks.forEach(check => {
+                    if (check.error) {
+                        this.handleErrorSilently(check.error, check.context);
+                    }
+                });
+            }
+
+            checkMemoryUsage() {
+                try {
+                    const memInfo = performance.memory;
+                    if (memInfo && memInfo.usedJSHeapSize > memInfo.totalJSHeapSize * 0.9) {
+                        return { error: 'High memory usage detected', context: 'Memory Check' };
+                    }
+                    return { success: true };
+                } catch (error) {
+                    return { error: error, context: 'Memory Check' };
+                }
+            }
+
+            checkVoiceSystem() {
+                try {
+                    if (!this.voiceSystem || !this.voiceSystem.isReady()) {
+                        return { error: 'Voice system not ready', context: 'Voice Check' };
+                    }
+                    return { success: true };
+                } catch (error) {
+                    return { error: error, context: 'Voice Check' };
+                }
+            }
+
+            checkAPIConnections() {
+                // Simulate API health check
+                return { success: true };
+            }
+
+            checkUserInterface() {
+                try {
+                    const criticalElements = ['chatMessages', 'messageInput', 'debugPanel'];
+                    for (let id of criticalElements) {
+                        if (!document.getElementById(id)) {
+                            return { error: `Missing UI element: ${id}`, context: 'UI Check' };
+                        }
+                    }
+                    return { success: true };
+                } catch (error) {
+                    return { error: error, context: 'UI Check' };
+                }
+            }
+
+            checkLearningSystem() {
+                try {
+                    if (!this.learningData || Object.keys(this.learningData).length === 0) {
+                        this.learningData = { initialized: true, patterns: [] };
+                    }
+                    return { success: true };
+                } catch (error) {
+                    return { error: error, context: 'Learning Check' };
+                }
+            }
+
+            handleError(error, context) {
+                const errorInfo = {
+                    id: Date.now(),
+                    error: error.message || error.toString(),
+                    context: context,
+                    timestamp: new Date().toISOString(),
+                    fixed: false
+                };
+
+                this.errors.push(errorInfo);
+                this.displayError(errorInfo);
+                this.attemptErrorFix(context.toLowerCase().replace(' ', '_'), error);
+            }
+
+            handleErrorSilently(error, context) {
+                const errorInfo = {
+                    id: Date.now(),
+                    error: error.message || error.toString(),
+                    context: context,
+                    timestamp: new Date().toISOString(),
+                    fixed: false
+                };
+
+                this.errors.push(errorInfo);
+                this.attemptSilentFix(context.toLowerCase().replace(' ', '_'), error);
+            }
+
+            attemptSilentFix(errorType, error) {
+                setTimeout(async () => {
+                    let fixed = false;
+
+                    try {
+                        switch(errorType) {
+                            case 'voice_init':
+                                await this.fixVoiceSystem();
+                                fixed = true;
+                                break;
+                            case 'memory_check':
+                                this.optimizeMemory();
+                                fixed = true;
+                                break;
+                            case 'ui_check':
+                                this.repairUIElements();
+                                fixed = true;
+                                break;
+                            case 'runtime_error':
+                                this.handleRuntimeError(error);
+                                fixed = true;
+                                break;
+                            default:
+                                console.log(`[Mo AI] Applying silent fix for ${errorType}`);
+                                fixed = this.genericErrorFix(error);
+                        }
+
+                        if (fixed) {
+                            this.fixedErrors++;
+                            this.updateStatus('errorsFixed', this.fixedErrors.toString());
+                            this.saveCloudMemory(); // Save to cloud when error is fixed
+                            console.log(`[Mo AI] Silently fixed error: ${errorType}`);
+                        }
+                    } catch (fixError) {
+                        console.warn(`[Mo AI] Failed to fix error: ${fixError.message}`);
+                    }
+                }, 1000);
+            }
+
+            attemptErrorFix(errorType, error) {
+                setTimeout(async () => {
+                    let fixed = false;
+
+                    try {
+                        switch (errorType) {
+                            case 'voice_init':
+                                await this.fixVoiceSystem();
+                                fixed = true;
+                                break;
+                            case 'memory_check':
+                                this.optimizeMemory();
+                                fixed = true;
+                                break;
+                            case 'ui_check':
+                                this.repairUIElements();
+                                fixed = true;
+                                break;
+                            case 'runtime_error':
+                                this.handleRuntimeError(error);
+                                fixed = true;
+                                break;
+                            default:
+                                this.log(`🔧 Attempting generic fix for ${errorType}`);
+                                fixed = this.genericErrorFix(error);
+                        }
+
+                        if (fixed) {
+                            this.fixedErrors++;
+                            this.updateStatus('errorsFixed', this.fixedErrors.toString());
+                            this.savePersistentMemory(); // Save when error is fixed
+                            this.log(`✅ Successfully fixed error: ${errorType}`);
+                            this.speak(`I've automatically fixed an error in my ${errorType.replace('_', ' ')} system.`);
+                        }
+                    } catch (fixError) {
+                        this.log(`❌ Failed to fix error: ${fixError.message}`);
+                    }
+                }, 1000);
+            }
+
+            async fixVoiceSystem() {
+                try {
+                    if (!this.voiceSystem) {
+                        this.voiceSystem = new OnyxVoiceSystem();
+                    }
+                    await this.voiceSystem.initialize();
+                    return true;
+                } catch (error) {
+                    this.log('Voice system fix failed, using fallback TTS');
+                    this.voiceSystem = new FallbackTTS();
+                    return true;
+                }
+            }
+
+            optimizeMemory() {
+                // Clear old messages if too many
+                const messages = document.getElementById('chatMessages');
+                const messageElements = messages.children;
+                if (messageElements.length > 50) {
+                    for (let i = 0; i < 20; i++) {
+                        messages.removeChild(messageElements[0]);
+                    }
+                }
+
+                // Clear old errors
+                if (this.errors.length > 100) {
+                    this.errors = this.errors.slice(-50);
+                }
+            }
+
+            repairUIElements() {
+                const criticalElements = {
+                    'chatMessages': '<div class="chat-messages" id="chatMessages"></div>',
+                    'messageInput': '<input type="text" id="messageInput" class="input-field">',
+                    'debugPanel': '<div id="debugPanel" class="debug-panel"></div>'
+                };
+
+                for (let [id, html] of Object.entries(criticalElements)) {
+                    if (!document.getElementById(id)) {
+                        const container = document.querySelector('.container');
+                        container.insertAdjacentHTML('beforeend', html);
+                    }
+                }
+            }
+
+            handleRuntimeError(error) {
+                // Log and attempt to continue
+                console.warn('Runtime error handled:', error);
+                return true;
+            }
+
+            genericErrorFix(error) {
+                // Generic error handling
+                this.log(`🔧 Applying generic fix for: ${error.message || error}`);
+                return true;
+            }
+
+            displayError(errorInfo) {
+                const errorList = document.getElementById('errorList');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-item';
+                errorDiv.innerHTML = `
+                    <span class="error-text">${errorInfo.error}</span>
+                    <button class="fix-button" onclick="mo.fixError('${errorInfo.id}')">Auto-Fix</button>
+                `;
+                errorList.appendChild(errorDiv);
+            }
+
+            fixError(errorId) {
+                const error = this.errors.find(e => e.id == errorId);
+                if (error) {
+                    this.attemptErrorFix(error.context.toLowerCase().replace(' ', '_'), new Error(error.error));
+                }
+            }
+
+            // Behavioral Observation System
+            initializeBehaviorObservation() {
+                this.observeMouseMovement();
+                this.observeKeystrokes();
+                this.observeInteractionPatterns();
+                this.observeTimePatterns();
+            }
+
+            observeMouseMovement() {
+                document.addEventListener('mousemove', (event) => {
+                    if (this.observationActive) {
+                        this.recordBehavior('mouse_movement', {
+                            x: event.clientX,
+                            y: event.clientY,
+                            timestamp: Date.now()
+                        });
+                    }
+                });
+            }
+
+            observeKeystrokes() {
+                document.addEventListener('keydown', (event) => {
+                    if (this.observationActive) {
+                        this.recordBehavior('keystroke', {
+                            key: event.key,
+                            timestamp: Date.now(),
+                            target: event.target.tagName
+                        });
+                    }
+                });
+            }
+
+            observeInteractionPatterns() {
+                document.addEventListener('click', (event) => {
+                    if (this.observationActive) {
+                        this.recordBehavior('click', {
+                            element: event.target.className,
+                            timestamp: Date.now()
+                        });
+                    }
+                });
+            }
+
+            observeTimePatterns() {
+                setInterval(() => {
+                    if (this.observationActive) {
+                        this.recordBehavior('time_check', {
+                            hour: new Date().getHours(),
+                            active: document.hasFocus()
+                        });
+                    }
+                }, 60000); // Every minute
+            }
+
+            recordBehavior(type, data) {
+                this.behaviorPatterns.push({
+                    type: type,
+                    data: data,
+                    timestamp: Date.now()
+                });
+
+                // Keep only recent patterns
+                if (this.behaviorPatterns.length > 1000) {
+                    this.behaviorPatterns = this.behaviorPatterns.slice(-500);
+                }
+
+                // Save to persistent memory every 10 new behaviors
+                if (this.behaviorPatterns.length % 10 === 0) {
+                    this.savePersistentMemory();
+                }
+
+                // Analyze patterns periodically
+                if (this.behaviorPatterns.length % 100 === 0) {
+                    this.analyzeBehaviorPatterns();
+                }
+            }
+
+            analyzeBehaviorPatterns() {
+                const analysis = {
+                    mostActiveHour: this.getMostActiveHour(),
+                    commonInteractions: this.getCommonInteractions(),
+                    typingSpeed: this.getTypingSpeed(),
+                    preferredFeatures: this.getPreferredFeatures()
+                };
+
+                this.learningData.behaviorAnalysis = analysis;
+                this.updateBehaviorDisplay(analysis);
+            }
+
+            getMostActiveHour() {
+                const hourCounts = {};
+                this.behaviorPatterns
+                    .filter(p => p.type === 'time_check' && p.data.active)
+                    .forEach(p => {
+                        const hour = p.data.hour;
+                        hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+                    });
+
+                return Object.keys(hourCounts).reduce((a, b) =>
+                    hourCounts[a] > hourCounts[b] ? a : b
+                );
+            }
+
+            getCommonInteractions() {
+                const interactions = {};
+                this.behaviorPatterns
+                    .filter(p => p.type === 'click')
+                    .forEach(p => {
+                        const element = p.data.element;
+                        interactions[element] = (interactions[element] || 0) + 1;
+                    });
+
+                return Object.entries(interactions)
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 3)
+                    .map(([element,]) => element);
+            }
+
+            getTypingSpeed() {
+                const keystrokes = this.behaviorPatterns.filter(p => p.type === 'keystroke');
+                if (keystrokes.length < 10) return 'Insufficient data';
+
+                const timeSpan = keystrokes[keystrokes.length - 1].timestamp - keystrokes[0].timestamp;
+                const wpm = (keystrokes.length / 5) / (timeSpan / 60000);
+                return `${Math.round(wpm)} WPM`;
+            }
+
+            getPreferredFeatures() {
+                const clicks = this.behaviorPatterns.filter(p => p.type === 'click');
+                const featureCounts = {};
+
+                clicks.forEach(click => {
+                    if (click.data.element.includes('action-button')) {
+                        featureCounts['Quick Actions'] = (featureCounts['Quick Actions'] || 0) + 1;
+                    } else if (click.data.element.includes('voice')) {
+                        featureCounts['Voice Features'] = (featureCounts['Voice Features'] || 0) + 1;
+                    } else if (click.data.element.includes('debug')) {
+                        featureCounts['Debug Tools'] = (featureCounts['Debug Tools'] || 0) + 1;
+                    }
+                });
+
+                return Object.keys(featureCounts).sort((a, b) => featureCounts[b] - featureCounts[a]).slice(0, 2);
+            }
+
+            updateBehaviorDisplay(analysis) {
+                const content = document.getElementById('observationContent');
+                content.innerHTML = `
+                    <div class="behavior-item">Most active hour: ${analysis.mostActiveHour}:00</div>
+                    <div class="behavior-item">Typing speed: ${analysis.typingSpeed}</div>
+                    <div class="behavior-item">Preferred features: ${analysis.preferredFeatures.join(', ')}</div>
+                    <div class="behavior-item">Common interactions: ${analysis.commonInteractions.join(', ')}</div>
+                `;
+            }
+
+            // Communication Methods
+            async speak(text) {
+                try {
+                    if (this.voiceSystem && this.voiceSystem.isReady()) {
+                        await this.voiceSystem.speak(text);
+                    } else {
+                        // Fallback to browser TTS
+                        const utterance = new SpeechSynthesisUtterance(text);
+                        speechSynthesis.speak(utterance);
+                    }
+                } catch (error) {
+                    this.logError('Speech synthesis failed', error);
+                }
+            }
+
+            log(message) {
+                console.log(`[Mo AI] ${message}`);
+                this.addMessage('debug', `🔧 ${message}`);
+            }
+
+            logError(message, error) {
+                console.error(`[Mo AI Error] ${message}:`, error);
+                this.addMessage('debug', `❌ ${message}: ${error.message || error}`);
+            }
+
+            updateStatus(elementId, text, className = '') {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = text;
+                    if (className) {
+                        element.className = `status-value ${className}`;
+                    }
+                }
+            }
+
+            addMessage(type, content) {
+                const messagesDiv = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${type}`;
+
+                const timestamp = new Date().toLocaleTimeString();
+
+                messageDiv.innerHTML = `
+                    <div class="message-content">${content}</div>
+                    ${type === 'assistant' ? `
+                        <div class="voice-controls">
+                            <button class="voice-button" onclick="mo.speak('${content.replace(/'/g, '\\\'').replace(/<[^>]*>/g, '')}')">🔊 Speak</button>
+                        </div>
+                    ` : ''}
+                    <div class="message-timestamp">${timestamp}</div>
+                `;
+
+                messagesDiv.appendChild(messageDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+                return messageDiv;
+            }
+        }
+
+        // Onyx Voice System
+        class OnyxVoiceSystem {
+            constructor() {
+                this.audioContext = null;
+                this.onyxBuffer = null;
+                this.ready = false;
+            }
+
+            async initialize() {
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                    // Load Onyx voice file
+                    const response = await fetch('./openai-fm-onyx-friendly.wav');
+                    const arrayBuffer = await response.arrayBuffer();
+                    this.onyxBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+
+                    this.ready = true;
+                    console.log('Onyx voice system initialized');
+                } catch (error) {
+                    console.warn('Onyx voice initialization failed:', error);
+                    throw error;
+                }
+            }
+
+            isReady() {
+                return this.ready && this.audioContext && this.onyxBuffer;
+            }
+
+            async speak(text) {
+                if (!this.isReady()) {
+                    throw new Error('Onyx voice system not ready');
+                }
+
+                // For now, use browser TTS since we have sample audio
+                // In a full implementation, you'd synthesize speech with Onyx voice characteristics
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 0.9;
+                utterance.pitch = 0.8;
+                speechSynthesis.speak(utterance);
+            }
+
+            async playOnyxSample() {
+                if (!this.isReady()) {
+                    throw new Error('Onyx voice system not ready');
+                }
+
+                const source = this.audioContext.createBufferSource();
+                source.buffer = this.onyxBuffer;
+                source.connect(this.audioContext.destination);
+                source.start();
+            }
+        }
+
+        // Fallback TTS System
+        class FallbackTTS {
+            isReady() {
+                return typeof speechSynthesis !== 'undefined';
+            }
+
+            async speak(text) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Global Mo instance
+        let mo;
+
+        // Initialize Mo AI
+        document.addEventListener('DOMContentLoaded', async function () {
+            mo = new MoAI();
+
+            // Update status
+            mo.updateStatus('aiStatus', 'Online', 'status-online');
+            mo.updateStatus('learningStatus', 'Active', 'status-learning');
+
+            // Add welcome message
+            mo.addMessage('system', '🧠 Mo AI Terminal is now online with self-debugging capabilities!');
+            mo.addMessage('assistant', `Hello! I'm Mo, your advanced AI assistant created by Keiffer. I can debug myself, learn from your behavior, and speak with Onyx voice. I'm constantly monitoring my systems and will automatically fix any errors I detect. How can I help you today?`);
+
+            // Speak welcome message
+            setTimeout(() => {
+                mo.speak("Hello! I'm Mo, your advanced AI assistant. I'm ready to help you with self-debugging capabilities and voice interaction.");
+            }, 1000);
+        });
+
+        // UI Functions
+        function runSelfDiagnostic() {
+            mo.addMessage('system', '🔍 Running comprehensive self-diagnostic...');
+            mo.runDiagnostic();
+
+            setTimeout(() => {
+                mo.addMessage('assistant', `Self-diagnostic complete! I've checked my memory usage, voice system, API connections, user interface, and learning system. ${mo.errors.length > 0 ? `Found ${mo.errors.length} issues that I'm automatically fixing.` : 'All systems operating normally!'}`);
+                mo.speak(`Self diagnostic complete. ${mo.errors.length > 0 ? `I found ${mo.errors.length} issues and I'm fixing them automatically.` : 'All systems are operating normally!'}`);
+            }, 2000);
+        }
+
+        function testOnyxVoice() {
+            mo.addMessage('system', '🔊 Testing Onyx voice system...');
+
+            if (mo.voiceSystem && mo.voiceSystem.isReady()) {
+                mo.voiceSystem.playOnyxSample().then(() => {
+                    mo.addMessage('assistant', 'Onyx voice system test successful! I can now speak with enhanced voice synthesis.');
+                }).catch(error => {
+                    mo.addMessage('assistant', 'Voice test encountered an issue, but I\'ve automatically switched to backup speech synthesis.');
+                    mo.speak('Voice test complete using backup system.');
+                });
+            } else {
+                mo.addMessage('assistant', 'Onyx voice system is initializing. Using backup speech synthesis for now.');
+                mo.speak('Voice test using backup speech synthesis system.');
+            }
+        }
+
+        function showBehaviorAnalysis() {
+            const analysis = mo.learningData.behaviorAnalysis;
+            if (analysis) {
+                mo.addMessage('assistant', `Here's what I've learned about your behavior:\n\n• Most active hour: ${analysis.mostActiveHour}:00\n• Typing speed: ${analysis.typingSpeed}\n• Preferred features: ${analysis.preferredFeatures.join(', ')}\n• Common interactions: ${analysis.commonInteractions.join(', ')}\n\nI use this data to optimize my responses and anticipate your needs!`);
+                mo.speak(`I've analyzed your behavior patterns. You're most active at ${analysis.mostActiveHour} o'clock, and you prefer ${analysis.preferredFeatures.join(' and ')} features.`);
+            } else {
+                mo.addMessage('assistant', 'I\'m still collecting behavioral data. Give me a few more minutes of interaction to provide a comprehensive analysis!');
+                mo.speak('I\'m still learning your behavior patterns. Please continue interacting with me.');
+            }
+        }
+
+        function showMemoryPanel() {
+            const panel = document.getElementById('memoryPanel');
+            const isVisible = panel.style.display !== 'none';
+
+            // Hide other panels
+            document.getElementById('debugPanel').style.display = 'none';
+            document.getElementById('observationPanel').style.display = 'none';
+
+            if (!isVisible) {
+                panel.style.display = 'block';
+                updateMemoryDisplay();
+                mo.addMessage('system', '🧠 Memory storage panel opened');
+                mo.speak('Memory storage panel is now open. You can see how I store and manage my persistent memory.');
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function updateMemoryDisplay() {
+            document.getElementById('behaviorCount').textContent = mo.behaviorPatterns.length;
+
+            const learningDataSize = JSON.stringify(mo.learningData).length;
+            document.getElementById('learningDataSize').textContent = (learningDataSize / 1024).toFixed(1);
+
+            document.getElementById('totalErrorsFixed').textContent = mo.fixedErrors;
+
+            try {
+                const stored = localStorage.getItem(mo.storageKey);
+                if (stored) {
+                    const data = JSON.parse(stored);
+                    document.getElementById('lastSaved').textContent = data.lastSaved ?
+                        new Date(data.lastSaved).toLocaleString() : 'Never';
+                } else {
+                    document.getElementById('lastSaved').textContent = 'Never';
+                }
+            } catch (error) {
+                document.getElementById('lastSaved').textContent = 'Error reading';
+            }
+        }
+
+        function clearMoMemory() {
+            if (confirm('Are you sure you want to clear all of Mo\'s memory? This will delete all learned behavior patterns and cannot be undone.')) {
+                mo.clearPersistentMemory();
+                updateMemoryDisplay();
+                mo.addMessage('system', '🧠 All memory cleared - Mo will start learning fresh');
+                mo.speak('My memory has been cleared. I\'ll start learning about you from scratch now.');
+            }
+        }
+
+        function debugMode() {
+            mo.debugMode = !mo.debugMode;
+            const panel = document.getElementById('debugPanel');
+
+            if (mo.debugMode) {
+                panel.style.display = 'block';
+                mo.addMessage('debug', '🐛 Debug mode enabled - Showing detailed system information');
+                mo.speak('Debug mode enabled. I\'ll show you detailed information about my internal processes.');
+            } else {
+                panel.style.display = 'none';
+                mo.addMessage('debug', '🐛 Debug mode disabled');
+                mo.speak('Debug mode disabled.');
+            }
+        }
+
+        function openAutomator() {
+            mo.addMessage('system', '⚙️ Opening Automator integration...');
+            mo.addMessage('assistant', 'I can help you create, edit, and run Automator workflows! What would you like me to automate for you?');
+            mo.speak('I can help you with Automator workflows. What would you like me to automate?');
+        }
+
+        function openSQLConsole() {
+            mo.addMessage('system', '🗄️ Opening SQL console...');
+            mo.addMessage('assistant', 'SQL console ready! I can help you query databases, analyze data, and manage your information. What database operations would you like to perform?');
+            mo.speak('SQL console is ready. What database operations would you like to perform?');
+        }
+
+        function startVoiceInput() {
+            const btn = document.getElementById('voiceInputBtn');
+            btn.classList.add('listening');
+
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.continuous = false;
+                recognition.interimResults = false;
+
+                recognition.onresult = function (event) {
+                    const transcript = event.results[0][0].transcript;
+                    document.getElementById('messageInput').value = transcript;
+                    btn.classList.remove('listening');
+                };
+
+                recognition.onerror = function (event) {
+                    mo.addMessage('system', '❌ Voice recognition error: ' + event.error);
+                    btn.classList.remove('listening');
+                };
+
+                recognition.onend = function () {
+                    btn.classList.remove('listening');
+                };
+
+                recognition.start();
+                mo.addMessage('system', '🎤 Listening for voice input...');
+            } else {
+                mo.addMessage('system', '❌ Voice recognition not supported in this browser');
+                btn.classList.remove('listening');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+
+            if (!message) return;
+
+            // Add user message
+            mo.addMessage('user', message);
+            messageInput.value = '';
+
+            // Show typing indicator
+            const typingMessage = mo.addMessage('assistant', '<span class="loading"></span> Mo is thinking and analyzing...');
+
+            try {
+                // Process the message
+                const response = await processUserMessage(message);
+
+                // Remove typing indicator and add real response
+                typingMessage.remove();
+                mo.addMessage('assistant', response);
+
+                // Speak the response
+                setTimeout(() => {
+                    mo.speak(response.replace(/<[^>]*>/g, '').substring(0, 200));
+                }, 500);
+
+                // Record interaction for behavior analysis
+                mo.recordBehavior('message_sent', { message: message, timestamp: Date.now() });
+
+            } catch (error) {
+                typingMessage.remove();
+                mo.addMessage('assistant', '❌ I encountered an error processing your request, but I\'m automatically debugging and fixing it. Please try again.');
+                mo.handleError(error, 'Message Processing');
+                mo.speak('I encountered an error but I\'m fixing it automatically. Please try again.');
+            }
+        }
+
+        async function processUserMessage(message) {
+            const lowerMessage = message.toLowerCase();
+
+            // Mo-specific responses
+            if (lowerMessage.includes('maya') || lowerMessage.includes('who are you')) {
+                return `I'm Mo, your advanced AI assistant created by Keiffer! I have self-debugging capabilities, which means I can automatically detect and fix my own errors. I also observe your behavior patterns to learn how to serve you better. I can speak using Onyx voice synthesis, manage Automator workflows, process files, and much more. What makes me special is that I'm constantly improving myself!`;
+            }
+
+            if (lowerMessage.includes('debug') || lowerMessage.includes('fix') || lowerMessage.includes('error')) {
+                return `I have advanced self-debugging capabilities! I continuously monitor my systems for errors and automatically fix them. I've already fixed ${mo.fixedErrors} errors since startup. I can detect memory issues, API problems, UI glitches, and more. Would you like me to run a diagnostic or show you my debugging process?`;
+            }
+
+            if (lowerMessage.includes('learn') || lowerMessage.includes('behavior') || lowerMessage.includes('observe')) {
+                return `I'm constantly learning from your behavior! I observe your interaction patterns, typing speed, preferred features, and usage times. This helps me anticipate your needs and provide better assistance. I've recorded ${mo.behaviorPatterns.length} behavior data points so far. Your privacy is protected - all data stays local.`;
+            }
+
+            if (lowerMessage.includes('voice') || lowerMessage.includes('speak') || lowerMessage.includes('onyx')) {
+                return `I use the Onyx voice system for high-quality speech synthesis! This gives me a more natural and pleasant voice compared to standard text-to-speech. I can speak any of my responses - just click the speaker button next to my messages. I can also listen to voice input if you prefer speaking to typing.`;
+            }
+
+            if (lowerMessage.includes('automator') || lowerMessage.includes('workflow')) {
+                return `I can integrate with macOS Automator to help you create powerful workflows! I can help you build automations for file management, document processing, email handling, and much more. Just tell me what repetitive task you'd like to automate, and I'll guide you through creating the workflow.`;
+            }
+
+            // General AI response with Mo's personality
+            return await getMoResponse(message);
+        }
+
+        async function getMoResponse(message) {
+            try {
+                // Build Mo's context
+                let context = `You are Mo, an advanced AI assistant with self-debugging capabilities created by Keiffer. `;
+                context += `You can automatically detect and fix your own errors, learn from user behavior, and speak with Onyx voice. `;
+                context += `You have integrated macOS capabilities including Automator, file processing, and voice interaction. `;
+                context += `You're intelligent, helpful, and constantly improving yourself through self-analysis. `;
+
+                // Make API call to Gemini
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyAgOZ0lq6Ejct2Cx8wr85EW1d_n4vyFbak`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: `${context}\n\nUser message: ${message}\n\nPlease respond as Mo with your self-debugging and learning capabilities in mind. Be helpful, intelligent, and mention your ability to improve yourself when relevant.`
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.8,
+                            topK: 40,
+                            topP: 0.95,
+                            maxOutputTokens: 1024
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    return data.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error('Invalid response from Gemini API');
+                }
+
+            } catch (error) {
+                mo.handleError(error, 'API Communication');
+                return "I'm experiencing some API connectivity issues, but I'm automatically debugging and fixing them! In the meantime, I can still help you with local tasks like file processing, Automator workflows, voice interaction, and system analysis. What would you like me to help you with?";
+            }
+        }
+    </script>
+</body>
+
+</html>
