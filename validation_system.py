@@ -12,11 +12,11 @@ from service_manager import ServiceManager
 class ValidationSystem:
     """7-pass validation framework for ESP"""
     
-    def __init__(self, key_manager: KeyManager, service_manager: ServiceManager):
+    def __init__(self, key_manager: KeyManager, service_manager: ServiceManager, config_path: str = "config.json"):
         """Initialize validation system"""
         self.key_manager = key_manager
         self.service_manager = service_manager
-        with open("config.json", 'r') as f:
+        with open(config_path, 'r') as f:
             config = json.load(f)
         self.validation_config = config.get("validation", {})
         self.passes = self.validation_config.get("passes", 7)
@@ -139,6 +139,12 @@ class ValidationSystem:
     def _validate_security(self) -> Dict[str, Any]:
         """Pass 6: Validate security"""
         print("Pass 6/7: Validating security...")
+        # TODO: In production, implement actual security checks:
+        # - Verify API keys are stored securely (not in plain text)
+        # - Check file permissions on key files
+        # - Validate encryption is enabled for sensitive data
+        # - Verify secure communication protocols (HTTPS/TLS)
+        # - Check for exposed credentials in logs or config
         # Placeholder for security validation
         result = {
             "passed": True,

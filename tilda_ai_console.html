@@ -239,7 +239,8 @@
     </div>
 
     <script>
-        const BACKEND_URL = 'http://127.0.0.1:8080';
+        // Use environment variable or default to localhost
+        const BACKEND_URL = window.ESP_BACKEND_URL || 'http://127.0.0.1:8080';
         const output = document.getElementById('output');
         const commandInput = document.getElementById('commandInput');
         const submitButton = document.getElementById('submitButton');
