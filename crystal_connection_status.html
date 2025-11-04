@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔮 Crystal AI Console - Connection Status</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .status-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+            color: white;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .crystal-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .status-grid {
+            display: grid;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .status-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .status-online {
+            border-left: 5px solid #4CAF50;
+        }
+
+        .status-offline {
+            border-left: 5px solid #f44336;
+        }
+
+        .status-testing {
+            border-left: 5px solid #ff9800;
+        }
+
+        .connection-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 15px;
+            padding: 15px 30px;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .connection-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .log-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="status-container">
+        <div class="crystal-title">🔮 Crystal AI Console</div>
+        <div class="subtitle">Backend Connection Status</div>
+
+        <div class="status-grid">
+            <div id="backendStatus" class="status-item status-offline">
+                <h3>🔗 Backend Server</h3>
+                <div id="backendText">Checking connection...</div>
+                <div style="margin-top: 10px;">
+                    <small>localhost:8888</small>
+                </div>
+            </div>
+
+            <div id="apiStatus" class="status-item status-offline">
+                <h3>🌐 API Services</h3>
+                <div id="apiText">Waiting for backend...</div>
+                <div style="margin-top: 10px;">
+                    <small>Tilda • Gemini • BigQuery</small>
+                </div>
+            </div>
+
+            <div id="uiStatus" class="status-item status-online">
+                <h3>💎 Crystal UI</h3>
+                <div>Frontend loaded successfully</div>
+                <div style="margin-top: 10px;">
+                    <small>Glassmorphism interface active</small>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <button class="connection-button" onclick="testConnection()">🔄 Test Connection</button>
+            <button class="connection-button" onclick="startBackend()">🚀 Start Backend</button>
+            <button class="connection-button" onclick="openConsole()">💻 Open Console</button>
+        </div>
+
+        <div class="log-area" id="connectionLog">
+            <div>🔮 Crystal AI Console Connection Diagnostics</div>
+            <div>Initializing connection tests...</div>
+        </div>
+    </div>
+
+    <script>
+        let connectionAttempts = 0;
+        const maxAttempts = 5;
+
+        function log(message) {
+            const logArea = document.getElementById('connectionLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function updateStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            element.className = `status-item status-${status}`;
+            const textElement = document.getElementById(elementId.replace('Status', 'Text'));
+            if (textElement) {
+                textElement.textContent = message;
+            }
+        }
+
+        async function testConnection() {
+            connectionAttempts++;
+            log(`🔄 Attempt ${connectionAttempts}: Testing backend connection...`);
+
+            updateStatus('backendStatus', 'testing', 'Testing connection...');
+            updateStatus('apiStatus', 'testing', 'Checking APIs...');
+
+            try {
+                // Test basic connection
+                const response = await fetch('http://localhost:8888', {
+                    method: 'GET',
+                    timeout: 5000
+                });
+
+                if (response.ok) {
+                    updateStatus('backendStatus', 'online', 'Connected successfully!');
+                    log(`✅ Backend server is running on localhost:8888`);
+
+                    // Test API endpoints
+                    try {
+                        const apiResponse = await fetch('http://localhost:8888', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ command: 'test connection' })
+                        });
+
+                        if (apiResponse.ok) {
+                            const data = await apiResponse.json();
+                            updateStatus('apiStatus', 'online', 'All APIs responding');
+                            log(`✅ API endpoints are working: ${data.type || 'success'}`);
+                        } else {
+                            updateStatus('apiStatus', 'offline', 'API endpoints not responding');
+                            log(`❌ API test failed: HTTP ${apiResponse.status}`);
+                        }
+                    } catch (apiError) {
+                        updateStatus('apiStatus', 'offline', 'API test failed');
+                        log(`❌ API error: ${apiError.message}`);
+                    }
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+            } catch (error) {
+                updateStatus('backendStatus', 'offline', 'Connection failed');
+                log(`❌ Connection failed: ${error.message}`);
+
+                if (connectionAttempts < maxAttempts) {
+                    log(`🔄 Retrying in 3 seconds... (${connectionAttempts}/${maxAttempts})`);
+                    setTimeout(testConnection, 3000);
+                } else {
+                    log(`⚠️ Max attempts reached. Please start the backend server manually.`);
+                    showBackendInstructions();
+                }
+            }
+        }
+
+        function showBackendInstructions() {
+            log(`📋 To start the backend server:`);
+            log(`   1. Open terminal in esp directory`);
+            log(`   2. Run: python3 real_ai_backend.py`);
+            log(`   3. Click "Test Connection" when server is running`);
+        }
+
+        function startBackend() {
+            log(`🚀 Opening terminal instructions...`);
+            alert('Please open a terminal in the esp directory and run: python3 real_ai_backend.py');
+            // Auto-test after user clicks OK
+            setTimeout(() => {
+                connectionAttempts = 0; // Reset attempts
+                testConnection();
+            }, 2000);
+        }
+
+        function openConsole() {
+            log(`💻 Opening Crystal AI Console...`);
+            window.open('real_ai_console.html', '_blank');
+        }
+
+        // Auto-start connection test when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            log(`🔮 Crystal AI Console connection checker loaded`);
+            log(`🔄 Starting automatic connection test...`);
+            setTimeout(testConnection, 1000);
+        });
+
+        // Periodic connection health check
+        setInterval(() => {
+            if (connectionAttempts > 0 && connectionAttempts < maxAttempts) {
+                // Only auto-retry if we're in the middle of testing
+                return;
+            }
+
+            // Quick health check every 30 seconds
+            fetch('http://localhost:8888', { method: 'GET', timeout: 2000 })
+                .then(response => {
+                    if (response.ok) {
+                        updateStatus('backendStatus', 'online', 'Connected and healthy');
+                    }
+                })
+                .catch(() => {
+                    updateStatus('backendStatus', 'offline', 'Connection lost');
+                });
+        }, 30000);
+    </script>
+</body>
+
+</html>
