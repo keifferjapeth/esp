@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tilda AI Console - ESP</title>
+    <title>Tilda AI - Terminal</title>
     <style>
         * {
             margin: 0;
@@ -12,330 +13,492 @@
         }
 
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-            color: #ffffff;
-            overflow: hidden;
-            height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
         }
 
-        /* Liquid Glass Effect */
-        .console-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 1200px;
-            height: 80vh;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+        body.dark {
+            background: #000000;
+            color: #f5f5f7;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 
-                0 8px 32px 0 rgba(0, 0, 0, 0.37),
-                inset 0 0 20px rgba(255, 255, 255, 0.05);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
             display: flex;
             flex-direction: column;
+            height: 85vh;
             overflow: hidden;
         }
 
-        /* Header */
-        .console-header {
-            padding: 20px 30px;
-            background: rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        body.dark .container {
+            background: #1d1d1f;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .header {
+            padding: 30px 40px 20px;
+            border-bottom: 1px solid #e5e5e7;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .console-title {
-            font-size: 24px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            background: linear-gradient(90deg, #ffffff 0%, #f0f0f0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        body.dark .header {
+            border-bottom-color: #424245;
         }
 
-        .status-indicator {
+        .header-left h1 {
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .header-left p {
+            font-size: 13px;
+            color: #86868b;
+            margin-top: 5px;
+        }
+
+        body.dark .header-left p {
+            color: #a1a1a6;
+        }
+
+        .status {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .status-item {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
         }
 
         .status-dot {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            background: #00ff00;
-            box-shadow: 0 0 10px #00ff00;
-            animation: pulse 2s infinite;
+            background: #e5e5e7;
+            transition: all 0.3s ease;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        body.dark .status-dot {
+            background: #424245;
         }
 
-        .status-text {
-            font-size: 14px;
-            color: #f0f0f0;
+        .status-dot.active {
+            background: #34c759;
+            box-shadow: 0 0 8px rgba(52, 199, 89, 0.4);
         }
 
-        /* Output Area */
-        .console-output {
+        .console-area {
             flex: 1;
-            padding: 20px 30px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #ffffff;
+        }
+
+        body.dark .console-area {
+            background: #1d1d1f;
+        }
+
+        .output {
+            flex: 1;
             overflow-y: auto;
-            font-size: 14px;
+            padding: 25px 40px;
+            background: #ffffff;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 12px;
             line-height: 1.6;
         }
 
+        body.dark .output {
+            background: #1d1d1f;
+        }
+
         .output-line {
-            margin-bottom: 10px;
-            animation: fadeIn 0.3s ease-in;
+            margin: 8px 0;
+            padding: 4px 0;
+            color: #1d1d1f;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
+        body.dark .output-line {
+            color: #f5f5f7;
         }
 
-        .output-line.system {
-            color: #00ff00;
+        .output-line.info {
+            color: #007aff;
         }
 
-        .output-line.user {
-            color: #ffffff;
+        body.dark .output-line.info {
+            color: #55b4ff;
         }
 
-        .output-line.result {
-            color: #f0f0f0;
-            padding-left: 20px;
+        .output-line.success {
+            color: #34c759;
+        }
+
+        body.dark .output-line.success {
+            color: #4fe964;
         }
 
         .output-line.error {
-            color: #ff6b6b;
+            color: #ff3b30;
         }
 
-        /* Input Area */
-        .console-input {
-            padding: 20px 30px;
-            background: rgba(255, 255, 255, 0.05);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        body.dark .output-line.error {
+            color: #ff453a;
+        }
+
+        .output-line.warning {
+            color: #ff9500;
+        }
+
+        body.dark .output-line.warning {
+            color: #ffa500;
+        }
+
+        .output-line.command {
+            color: #555;
+            font-weight: 500;
+        }
+
+        body.dark .output-line.command {
+            color: #a1a1a6;
+        }
+
+        .output-line.translation {
+            color: #a2845e;
+            font-weight: 500;
+        }
+
+        body.dark .output-line.translation {
+            color: #d4a574;
+        }
+
+        .output::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .output::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .output::-webkit-scrollbar-thumb {
+            background: #d5d5d7;
+            border-radius: 5px;
+        }
+
+        body.dark .output::-webkit-scrollbar-thumb {
+            background: #424245;
+        }
+
+        .output::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a6;
+        }
+
+        body.dark .output::-webkit-scrollbar-thumb:hover {
+            background: #6b6b6f;
+        }
+
+        .input-area {
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            padding: 20px 40px 30px;
+            background: #ffffff;
+            border-top: 1px solid #e5e5e7;
         }
 
-        .input-field {
+        body.dark .input-area {
+            background: #1d1d1f;
+            border-top-color: #424245;
+        }
+
+        #commandInput {
             flex: 1;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #f5f5f7;
+            border: 1.5px solid #e5e5e7;
+            color: #1d1d1f;
+            padding: 11px 16px;
             border-radius: 10px;
-            padding: 12px 20px;
-            color: #ffffff;
-            font-family: 'Courier New', monospace;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
             font-size: 14px;
             outline: none;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
-        .input-field:focus {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.4);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        body.dark #commandInput {
+            background: #424245;
+            border-color: #555;
+            color: #f5f5f7;
         }
 
-        .input-field::placeholder {
-            color: rgba(255, 255, 255, 0.5);
+        #commandInput:focus {
+            background: #ffffff;
+            border-color: #007aff;
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
         }
 
-        .submit-button {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        body.dark #commandInput:focus {
+            background: #333;
+            border-color: #007aff;
+        }
+
+        #commandInput::placeholder {
+            color: #86868b;
+        }
+
+        body.dark #commandInput::placeholder {
+            color: #a1a1a6;
+        }
+
+        button {
+            padding: 10px 18px;
+            background: #007aff;
+            color: white;
+            border: none;
             border-radius: 10px;
-            padding: 12px 30px;
-            color: #ffffff;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            transition: all 0.2s ease;
+            outline: none;
         }
 
-        .submit-button:hover {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%);
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        button:hover {
+            background: #0a66cc;
+            transform: none;
         }
 
-        .submit-button:active {
-            transform: scale(0.98);
+        button:active {
+            background: #0052a3;
         }
 
-        /* Custom Scrollbar */
-        .console-output::-webkit-scrollbar {
-            width: 8px;
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
-        .console-output::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+        button#clearBtn {
+            background: #f5f5f7;
+            color: #1d1d1f;
+            border: 1.5px solid #e5e5e7;
         }
 
-        .console-output::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
+        body.dark button#clearBtn {
+            background: #424245;
+            border-color: #555;
+            color: #f5f5f7;
         }
 
-        .console-output::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
+        button#clearBtn:hover {
+            background: #e8e8eb;
+            border-color: #d5d5d7;
         }
 
-        /* Loading indicator */
+        body.dark button#clearBtn:hover {
+            background: #555;
+            border-color: #666;
+        }
+
         .loading {
             display: inline-block;
-            width: 10px;
-            height: 10px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: #ffffff;
+            width: 6px;
+            height: 6px;
+            background: currentColor;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: blink 1.4s infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        @keyframes blink {
+
+            0%,
+            60%,
+            100% {
+                opacity: 1;
+            }
+
+            30% {
+                opacity: 0.3;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .theme-toggle:hover {
+            background: #f5f5f7;
+        }
+
+        body.dark .theme-toggle:hover {
+            background: #424245;
         }
     </style>
 </head>
+
 <body>
-    <div class="console-container">
-        <div class="console-header">
-            <div class="console-title">◆ TILDA AI CONSOLE</div>
-            <div class="status-indicator">
-                <div class="status-dot"></div>
-                <div class="status-text" id="statusText">Connecting...</div>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1>Tilda AI</h1>
+                <p>Natural Language Terminal Assistant</p>
+            </div>
+            <div class="status">
+                <div class="status-item">
+                    <span class="status-dot active"></span>
+                    <span id="geminiStatus">Gemini</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-dot active"></span>
+                    <span id="backendStatus">Backend</span>
+                </div>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
             </div>
         </div>
 
-        <div class="console-output" id="output">
-            <div class="output-line system">ESP Backend Console v1.0</div>
-            <div class="output-line system">Enhanced Service Platform - Terminal Automation</div>
-            <div class="output-line system">Type your command or try: "list my Tilda projects", "show me my files", "query BigQuery"</div>
-            <div class="output-line system">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
-        </div>
-
-        <div class="console-input">
-            <input 
-                type="text" 
-                class="input-field" 
-                id="commandInput" 
-                placeholder="Enter natural language command..."
-                autocomplete="off"
-            >
-            <button class="submit-button" id="submitButton">Execute</button>
+        <div class="console-area">
+            <div class="output" id="output"></div>
+            <div class="input-area">
+                <input type="text" id="commandInput" placeholder="Type a command or question..." autocomplete="off">
+                <button id="executeBtn" onclick="executeCommand()">Send</button>
+                <button id="clearBtn" onclick="clearOutput()">Clear</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Use environment variable or default to localhost
-        const BACKEND_URL = window.ESP_BACKEND_URL || 'http://127.0.0.1:8080';
-        const output = document.getElementById('output');
-        const commandInput = document.getElementById('commandInput');
-        const submitButton = document.getElementById('submitButton');
-        const statusText = document.getElementById('statusText');
+        const API_BASE = 'http://localhost:5000';
 
-        // Check backend status
+        // Theme management
+        function toggleTheme() {
+            const htmlElement = document.documentElement;
+            const isDark = htmlElement.getAttribute('data-theme') === 'dark';
+            const newTheme = isDark ? 'light' : 'dark';
+
+            htmlElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('tilda-theme', newTheme);
+
+            const themeToggle = document.getElementById('themeToggle');
+            themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('tilda-theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+
+            const themeToggle = document.getElementById('themeToggle');
+            themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+        }
+
         async function checkStatus() {
             try {
-                const response = await fetch(`${BACKEND_URL}/status`);
+                const response = await fetch(`${API_BASE}/health`);
                 if (response.ok) {
-                    const data = await response.json();
-                    statusText.textContent = 'Connected';
-                    addOutput('system', `Backend status: ${data.status}`);
-                    addOutput('system', `Active key: ${data.active_key || 'none'}`);
-                    return true;
+                    document.getElementById('backendStatus').textContent = 'Connected';
+                    document.getElementById('backendStatus').style.color = 'var(--status-active)';
                 }
             } catch (error) {
-                statusText.textContent = 'Disconnected';
-                addOutput('error', 'Failed to connect to backend. Make sure backend.py is running.');
-                return false;
+                document.getElementById('backendStatus').textContent = 'Offline';
+                document.getElementById('backendStatus').style.color = 'var(--status-inactive)';
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/gemini-status`);
+                if (response.ok) {
+                    document.getElementById('geminiStatus').textContent = 'Ready';
+                    document.getElementById('geminiStatus').style.color = 'var(--status-active)';
+                }
+            } catch (error) {
+                document.getElementById('geminiStatus').textContent = 'Unavailable';
+                document.getElementById('geminiStatus').style.color = 'var(--status-inactive)';
             }
         }
 
-        // Add output line
-        function addOutput(type, message) {
-            const line = document.createElement('div');
-            line.className = `output-line ${type}`;
-            line.textContent = message;
-            output.appendChild(line);
+        async function executeCommand() {
+            const input = document.getElementById('commandInput').value.trim();
+            if (!input) return;
+
+            const output = document.getElementById('output');
+
+            // Add user command to output
+            const userLine = document.createElement('div');
+            userLine.className = 'output-line user';
+            userLine.textContent = `$ ${input}`;
+            output.appendChild(userLine);
+
+            try {
+                const response = await fetch(`${API_BASE}/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: input })
+                });
+
+                const data = await response.json();
+
+                const resultLine = document.createElement('div');
+                resultLine.className = 'output-line result';
+                resultLine.innerHTML = data.output || data.error || 'No response';
+                output.appendChild(resultLine);
+
+            } catch (error) {
+                const errorLine = document.createElement('div');
+                errorLine.className = 'output-line error';
+                errorLine.textContent = `Error: ${error.message}`;
+                output.appendChild(errorLine);
+            }
+
+            document.getElementById('commandInput').value = '';
             output.scrollTop = output.scrollHeight;
         }
 
-        // Execute command
-        async function executeCommand(command) {
-            if (!command.trim()) return;
-
-            addOutput('user', `> ${command}`);
-            addOutput('system', 'Processing...');
-
-            try {
-                const response = await fetch(`${BACKEND_URL}/execute`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ command: command })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    addOutput('result', `Action: ${data.action}`);
-                    addOutput('result', `Service: ${data.service || 'none'}`);
-                    
-                    if (data.result) {
-                        if (typeof data.result === 'object') {
-                            addOutput('result', JSON.stringify(data.result, null, 2));
-                        } else {
-                            addOutput('result', data.result);
-                        }
-                    }
-                    
-                    if (data.data && Array.isArray(data.data)) {
-                        data.data.forEach(item => {
-                            addOutput('result', `  • ${item}`);
-                        });
-                    }
-                } else {
-                    addOutput('error', `Error: ${response.status} ${response.statusText}`);
-                }
-            } catch (error) {
-                addOutput('error', `Error: ${error.message}`);
-            }
-
-            addOutput('system', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        function clearOutput() {
+            document.getElementById('output').innerHTML = '';
         }
 
-        // Event listeners
-        submitButton.addEventListener('click', () => {
-            const command = commandInput.value;
-            executeCommand(command);
-            commandInput.value = '';
-        });
-
-        commandInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                const command = commandInput.value;
-                executeCommand(command);
-                commandInput.value = '';
-            }
-        });
-
-        // Initialize
-        window.addEventListener('load', () => {
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
             checkStatus();
+            setInterval(checkStatus, 30000);
+
+            // Focus on input field
+            document.getElementById('commandInput').focus();
+        });
+
+        // Execute on Enter key
+        document.getElementById('commandInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') executeCommand();
         });
     </script>
 </body>
+
 </html>

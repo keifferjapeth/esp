@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tilda AI Console - Gemini Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* Liquid Glass Effect */
+        .console-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 1200px;
+            height: 80vh;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 8px 32px 0 rgba(0, 0, 0, 0.37),
+                inset 0 0 20px rgba(255, 255, 255, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .console-header {
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-title {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #ffffff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: #f0f0f0;
+        }
+
+        /* Output Area */
+        .console-output {
+            flex: 1;
+            padding: 20px 30px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .output-line {
+            margin-bottom: 10px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .output-line.system {
+            color: #00ff00;
+        }
+
+        .output-line.user {
+            color: #ffffff;
+        }
+
+        .output-line.result {
+            color: #f0f0f0;
+            padding-left: 20px;
+        }
+
+        .output-line.error {
+            color: #ff6b6b;
+        }
+
+        /* Input Area */
+        .console-input {
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 12px 20px;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        .input-field::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .submit-button {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 12px 30px;
+            color: #ffffff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-button:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .submit-button:active {
+            transform: scale(0.98);
+        }
+
+        /* Custom Scrollbar */
+        .console-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .console-output::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .console-output::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        .console-output::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Loading indicator */
+        .loading {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="console-container">
+        <div class="console-header">
+            <div class="console-title">◆ TILDA AI CONSOLE</div>
+            <div class="status-indicator">
+                <div class="status-dot"></div>
+                <div class="status-text" id="statusText">Connecting...</div>
+            </div>
+        </div>
+
+        <div class="console-output" id="output">
+            <div class="output-line system">ESP Backend Console v1.0</div>
+            <div class="output-line system">Enhanced Service Platform - Terminal Automation</div>
+            <div class="output-line system">Type your command or try: "list my Tilda projects", "show me my files", "query BigQuery"</div>
+            <div class="output-line system">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+        </div>
+
+        <div class="console-input">
+            <input 
+                type="text" 
+                class="input-field" 
+                id="commandInput" 
+                placeholder="Enter natural language command..."
+                autocomplete="off"
+            >
+            <button class="submit-button" id="submitButton">Execute</button>
+        </div>
+    </div>
+
+    <script>
+        // Use environment variable or default to localhost
+        const BACKEND_URL = window.ESP_BACKEND_URL || 'http://127.0.0.1:8080';
+        const output = document.getElementById('output');
+        const commandInput = document.getElementById('commandInput');
+        const submitButton = document.getElementById('submitButton');
+        const statusText = document.getElementById('statusText');
+
+        // Check backend status
+        async function checkStatus() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    statusText.textContent = 'Connected';
+                    addOutput('system', `Backend status: ${data.status}`);
+                    addOutput('system', `Active key: ${data.active_key || 'none'}`);
+                    return true;
+                }
+            } catch (error) {
+                statusText.textContent = 'Disconnected';
+                addOutput('error', 'Failed to connect to backend. Make sure backend.py is running.');
+                return false;
+            }
+        }
+
+        // Add output line
+        function addOutput(type, message) {
+            const line = document.createElement('div');
+            line.className = `output-line ${type}`;
+            line.textContent = message;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // Execute command
+        async function executeCommand(command) {
+            if (!command.trim()) return;
+
+            addOutput('user', `> ${command}`);
+            addOutput('system', 'Processing...');
+
+            try {
+                const response = await fetch(`${BACKEND_URL}/execute`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command: command })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    addOutput('result', `Action: ${data.action}`);
+                    addOutput('result', `Service: ${data.service || 'none'}`);
+                    
+                    if (data.result) {
+                        if (typeof data.result === 'object') {
+                            addOutput('result', JSON.stringify(data.result, null, 2));
+                        } else {
+                            addOutput('result', data.result);
+                        }
+                    }
+                    
+                    if (data.data && Array.isArray(data.data)) {
+                        data.data.forEach(item => {
+                            addOutput('result', `  • ${item}`);
+                        });
+                    }
+                } else {
+                    addOutput('error', `Error: ${response.status} ${response.statusText}`);
+                }
+            } catch (error) {
+                addOutput('error', `Error: ${error.message}`);
+            }
+
+            addOutput('system', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        }
+
+        // Event listeners
+        submitButton.addEventListener('click', () => {
+            const command = commandInput.value;
+            executeCommand(command);
+            commandInput.value = '';
+        });
+
+        commandInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const command = commandInput.value;
+                executeCommand(command);
+                commandInput.value = '';
+            }
+        });
+
+        // Initialize
+        window.addEventListener('load', () => {
+            checkStatus();
+        });
+    </script>
+</body>
+</html>

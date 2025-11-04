@@ -4,6 +4,7 @@ ESP Backend Server - Main backend console server
 """
 
 import json
+import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 from key_manager import KeyManager
@@ -19,11 +20,17 @@ class ESPHandler(BaseHTTPRequestHandler):
         """Handle GET requests"""
         parsed_path = urlparse(self.path)
         
-        if parsed_path.path == '/status':
+        if parsed_path.path == '/' or parsed_path.path == '':
+            self._serve_html()
+        elif parsed_path.path == '/status':
             self._handle_status()
         elif parsed_path.path == '/validate':
             self._handle_validate()
         elif parsed_path.path == '/services':
+            self._handle_services()
+        elif parsed_path.path == '/api/status':
+            self._handle_status()
+        elif parsed_path.path == '/api/services':
             self._handle_services()
         else:
             self._send_response(404, {"error": "Not found"})
@@ -48,11 +55,18 @@ class ESPHandler(BaseHTTPRequestHandler):
         else:
             self._send_response(404, {"error": "Not found"})
     
+    def do_HEAD(self):
+        """Handle HEAD requests (preflight checks)"""
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+    
     def do_OPTIONS(self):
         """Handle OPTIONS requests for CORS"""
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         self.end_headers()
     
@@ -63,6 +77,21 @@ class ESPHandler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.end_headers()
         self.wfile.write(json.dumps(data).encode('utf-8'))
+    
+    def _serve_html(self):
+        """Serve the HTML UI"""
+        html_file = os.path.join(os.path.dirname(__file__), 'tilda_ai_console.html')
+        try:
+            with open(html_file, 'r') as f:
+                html_content = f.read()
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            self.wfile.write(html_content.encode('utf-8'))
+        except FileNotFoundError:
+            self._send_response(404, {"error": "HTML file not found"})
+    
     
     def _handle_status(self):
         """Handle /status endpoint"""
