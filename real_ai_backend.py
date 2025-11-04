@@ -17,6 +17,14 @@ import requests
 import shutil
 from pathlib import Path
 
+# Import Acrobat Project configuration
+try:
+    from acrobat_project_config import AcrobatProjectConfig, AcrobatMLIntegration, get_acrobat_status
+    ACROBAT_AVAILABLE = True
+except ImportError:
+    ACROBAT_AVAILABLE = False
+    print("⚠️  Acrobat project config not available")
+
 class RealCommandExecutor:
     def __init__(self):
         self.tilda_public_key = "b9j7w8eka0dwsizitkix"
@@ -217,6 +225,13 @@ class RealCommandExecutor:
     def process_natural_language_command(self, command):
         """Process natural language and execute REAL commands"""
         cmd_lower = command.lower()
+        
+        if any(word in cmd_lower for word in ['acrobat', 'vertex', 'ml model', 'machine learning']):
+            if ACROBAT_AVAILABLE:
+                status = get_acrobat_status()
+                return {"type": "acrobat", "data": status, "success": True}
+            else:
+                return {"type": "acrobat", "data": {"error": "Acrobat project not configured"}, "success": False}
         
         if any(word in cmd_lower for word in ['file', 'show', 'list', 'find']):
             if 'cloud' in cmd_lower or 'drive' in cmd_lower:

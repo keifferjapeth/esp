@@ -44,12 +44,19 @@ class APIKeyManager:
         """Load all API keys with automatic fallbacks"""
         
         # Google Cloud / Vertex AI Keys (alert-acrobat-477200-g9 project)
-        APIKey("Primary Vertex AI (alert-acrobat)", "AIzaSyBQWBs2HYmllkp5t37QEwIhF0viJ8vWMZs", "vertex_ai", 100),
-        APIKey("Secondary Vertex AI (alert-acrobat)", "AIzaSyCjtdewcjT6nUGS-_aT9T1ERpfTXlMcYXo", "vertex_ai", 90),
-        
-        # BigQuery Keys (aimo-460701 and alert-acrobat-477200-g9 projects)
-        APIKey("BigQuery API (aimo-460701)", "AIzaSyCjtdewcjT6nUGS-_aT9T1ERpfTXlMcYXo", "bigquery", 100),
-        APIKey("BigQuery API (alert-acrobat)", "AIzaSyCjtdewcjT6nUGS71QCj6lpKKj6Av8xGp8", "bigquery", 90),
+        google_keys = [
+            APIKey("Primary Vertex AI (alert-acrobat)", "AIzaSyBQWBs2HYmllkp5t37QEwIhF0viJ8vWMZs", "vertex_ai", 100),
+            APIKey("Secondary Vertex AI (alert-acrobat)", "AIzaSyCjtdewcjT6nUGS-_aT9T1ERpfTXlMcYXo", "vertex_ai", 90),
+            
+            # BigQuery Keys (aimo-460701 and alert-acrobat-477200-g9 projects)
+            APIKey("BigQuery API (aimo-460701)", "AIzaSyCjtdewcjT6nUGS-_aT9T1ERpfTXlMcYXo", "bigquery", 100),
+            APIKey("BigQuery API (alert-acrobat)", "AIzaSyCjtdewcjT6nUGS71QCj6lpKKj6Av8xGp8", "bigquery", 90),
+            
+            # Gemini API Keys (same as Vertex AI for Gemini access)
+            APIKey("Gemini API Primary", "AIzaSyBQWBs2HYmllkp5t37QEwIhF0viJ8vWMZs", "gemini", 100),
+            APIKey("Gemini API Secondary", "AIzaSyCjtdewcjT6nUGS-_aT9T1ERpfTXlMcYXo", "gemini", 90),
+            APIKey("Gemini API Tertiary", "AIzaSyAgOZ0lq6Ejct2Cx8wr85EW1d_n4vyFbak", "gemini", 80),
+        ]
         self.keys["google"] = google_keys
         
         # OpenAI Keys (Multiple fallbacks)

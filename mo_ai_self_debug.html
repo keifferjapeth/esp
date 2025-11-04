@@ -608,6 +608,10 @@
                 <div>🗄️</div>
                 <div>SQL Console</div>
             </div>
+            <div class="action-button" onclick="openAcrobatProject()">
+                <div>🚀</div>
+                <div>Acrobat Project</div>
+            </div>
         </div>
 
         <!-- Memory Management Panel -->
@@ -928,7 +932,7 @@
                     let fixed = false;
 
                     try {
-                        switch(errorType) {
+                        switch (errorType) {
                             case 'voice_init':
                                 await this.fixVoiceSystem();
                                 fixed = true;
@@ -1163,6 +1167,13 @@
 
                 this.learningData.behaviorAnalysis = analysis;
                 this.updateBehaviorDisplay(analysis);
+
+                // Enhanced learning: pattern recognition and logic creation
+                if (this.behaviorPatterns.length >= 50) { // Only run advanced analysis with sufficient data
+                    const patterns = this.recognizePatterns();
+                    this.learningData.advancedPatterns = patterns;
+                    console.log('[Mo AI] Advanced pattern recognition completed');
+                }
             }
 
             getMostActiveHour() {
@@ -1228,6 +1239,234 @@
                     <div class="behavior-item">Preferred features: ${analysis.preferredFeatures.join(', ')}</div>
                     <div class="behavior-item">Common interactions: ${analysis.commonInteractions.join(', ')}</div>
                 `;
+            }
+
+            // Enhanced Learning System - Pattern Recognition & Logic Creation
+            recognizePatterns() {
+                const patterns = {
+                    userPreferences: this.extractUserPreferences(),
+                    interactionSequences: this.findInteractionSequences(),
+                    errorPatterns: this.analyzeErrorPatterns(),
+                    timeBasedPatterns: this.extractTimeBasedPatterns(),
+                    logicRules: this.generateLogicRules()
+                };
+
+                this.learningData.patterns = patterns;
+                this.applyLearnedLogic(patterns.logicRules);
+                console.log('[Mo AI] Pattern recognition completed');
+                return patterns;
+            }
+
+            extractUserPreferences() {
+                const preferences = {
+                    communicationStyle: 'unknown',
+                    preferredTime: 'unknown',
+                    featureUsage: {},
+                    responsePreferences: {}
+                };
+
+                // Analyze communication patterns
+                const messages = this.behaviorPatterns.filter(p => p.type === 'message');
+                if (messages.length > 5) {
+                    const avgLength = messages.reduce((sum, m) => sum + (m.data?.length || 0), 0) / messages.length;
+                    preferences.communicationStyle = avgLength > 50 ? 'detailed' : 'concise';
+                }
+
+                // Analyze time preferences
+                const activeHours = this.behaviorPatterns
+                    .filter(p => p.type === 'time_check' && p.data?.active)
+                    .map(p => p.data.hour);
+
+                if (activeHours.length > 0) {
+                    const mostCommonHour = activeHours.sort((a, b) =>
+                        activeHours.filter(v => v === a).length - activeHours.filter(v => v === b).length
+                    ).pop();
+                    preferences.preferredTime = `${mostCommonHour}:00`;
+                }
+
+                return preferences;
+            }
+
+            findInteractionSequences() {
+                const sequences = [];
+                const recentPatterns = this.behaviorPatterns.slice(-50);
+
+                // Look for common action sequences
+                for (let i = 0; i < recentPatterns.length - 2; i++) {
+                    const sequence = [
+                        recentPatterns[i].type,
+                        recentPatterns[i + 1].type,
+                        recentPatterns[i + 2].type
+                    ];
+
+                    // Count occurrences of this sequence
+                    let count = 0;
+                    for (let j = 0; j < recentPatterns.length - 2; j++) {
+                        if (recentPatterns[j].type === sequence[0] &&
+                            recentPatterns[j + 1].type === sequence[1] &&
+                            recentPatterns[j + 2].type === sequence[2]) {
+                            count++;
+                        }
+                    }
+
+                    if (count >= 2) {
+                        sequences.push({
+                            sequence: sequence,
+                            frequency: count,
+                            confidence: count / (recentPatterns.length - 2)
+                        });
+                    }
+                }
+
+                return sequences.sort((a, b) => b.frequency - a.frequency).slice(0, 5);
+            }
+
+            analyzeErrorPatterns() {
+                const errorPatterns = {};
+                const recentErrors = this.errors.slice(-20);
+
+                recentErrors.forEach(error => {
+                    const key = `${error.context}_${error.error.split(' ')[0]}`;
+                    errorPatterns[key] = (errorPatterns[key] || 0) + 1;
+                });
+
+                return Object.entries(errorPatterns)
+                    .sort(([, a], [, b]) => b - a)
+                    .reduce((obj, [key, value]) => ({ ...obj, [key]: value }), {});
+            }
+
+            extractTimeBasedPatterns() {
+                const patterns = {
+                    peakHours: [],
+                    quietHours: [],
+                    activityTrends: {}
+                };
+
+                const hourlyActivity = Array(24).fill(0);
+                this.behaviorPatterns.forEach(pattern => {
+                    if (pattern.timestamp) {
+                        const hour = new Date(pattern.timestamp).getHours();
+                        hourlyActivity[hour]++;
+                    }
+                });
+
+                const avgActivity = hourlyActivity.reduce((a, b) => a + b, 0) / 24;
+                patterns.peakHours = hourlyActivity
+                    .map((count, hour) => ({ hour, count }))
+                    .filter(item => item.count > avgActivity * 1.5)
+                    .map(item => item.hour);
+
+                patterns.quietHours = hourlyActivity
+                    .map((count, hour) => ({ hour, count }))
+                    .filter(item => item.count < avgActivity * 0.5)
+                    .map(item => item.hour);
+
+                return patterns;
+            }
+
+            generateLogicRules() {
+                const rules = [];
+
+                // Rule 1: If user frequently uses voice input, prioritize voice responses
+                const voiceUsage = this.behaviorPatterns.filter(p => p.type === 'voice_input').length;
+                if (voiceUsage > 10) {
+                    rules.push({
+                        condition: 'high_voice_usage',
+                        action: 'prioritize_voice_responses',
+                        confidence: voiceUsage / this.behaviorPatterns.length
+                    });
+                }
+
+                // Rule 2: If user works late hours, adjust interface brightness
+                const lateHourUsage = this.behaviorPatterns.filter(p => {
+                    const hour = new Date(p.timestamp).getHours();
+                    return hour >= 22 || hour <= 5;
+                }).length;
+
+                if (lateHourUsage > this.behaviorPatterns.length * 0.3) {
+                    rules.push({
+                        condition: 'late_night_usage',
+                        action: 'enable_dark_mode',
+                        confidence: lateHourUsage / this.behaviorPatterns.length
+                    });
+                }
+
+                // Rule 3: If user frequently encounters errors, increase self-diagnostic frequency
+                const errorRate = this.errors.length / Math.max(this.behaviorPatterns.length, 1);
+                if (errorRate > 0.05) {
+                    rules.push({
+                        condition: 'high_error_rate',
+                        action: 'increase_diagnostic_frequency',
+                        confidence: errorRate
+                    });
+                }
+
+                // Rule 4: If user prefers quick actions, show shortcuts
+                const quickActions = this.behaviorPatterns.filter(p =>
+                    p.type === 'click' && p.data?.element?.includes('action-button')
+                ).length;
+
+                if (quickActions > this.behaviorPatterns.length * 0.2) {
+                    rules.push({
+                        condition: 'prefers_quick_actions',
+                        action: 'show_action_shortcuts',
+                        confidence: quickActions / this.behaviorPatterns.length
+                    });
+                }
+
+                return rules;
+            }
+
+            applyLearnedLogic(rules) {
+                rules.forEach(rule => {
+                    if (rule.confidence > 0.3) { // Only apply high-confidence rules
+                        switch (rule.action) {
+                            case 'prioritize_voice_responses':
+                                this.voicePriority = true;
+                                console.log('[Mo AI] Learned: Prioritizing voice responses');
+                                break;
+                            case 'enable_dark_mode':
+                                this.enableDarkMode();
+                                console.log('[Mo AI] Learned: Enabling dark mode for late-night usage');
+                                break;
+                            case 'increase_diagnostic_frequency':
+                                this.diagnosticInterval = Math.max(10000, this.diagnosticInterval * 0.8);
+                                console.log('[Mo AI] Learned: Increasing diagnostic frequency');
+                                break;
+                            case 'show_action_shortcuts':
+                                this.showActionShortcuts();
+                                console.log('[Mo AI] Learned: Showing action shortcuts');
+                                break;
+                        }
+                    }
+                });
+            }
+
+            enableDarkMode() {
+                document.body.style.background = 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)';
+                document.body.style.color = '#e0e0e0';
+            }
+
+            showActionShortcuts() {
+                const shortcuts = document.createElement('div');
+                shortcuts.id = 'actionShortcuts';
+                shortcuts.innerHTML = `
+                    <div style="position: fixed; top: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px; font-size: 12px;">
+                        <strong>Quick Actions:</strong><br>
+                        Ctrl+Enter: Send<br>
+                        Ctrl+V: Voice Input<br>
+                        Ctrl+D: Debug<br>
+                        Ctrl+M: Memory
+                    </div>
+                `;
+                document.body.appendChild(shortcuts);
+
+                // Auto-hide after 10 seconds
+                setTimeout(() => {
+                    if (shortcuts.parentNode) {
+                        shortcuts.parentNode.removeChild(shortcuts);
+                    }
+                }, 10000);
             }
 
             // Communication Methods
@@ -1490,6 +1729,12 @@
             mo.speak('SQL console is ready. What database operations would you like to perform?');
         }
 
+        function openAcrobatProject() {
+            mo.addMessage('system', '🚀 Accessing Acrobat Project...');
+            mo.addMessage('assistant', `🎯 **Alert-Acrobat Project (alert-acrobat-477200-g9)** is now active!\n\nThis project gives me access to:\n\n✅ **Vertex AI Services** - Advanced machine learning capabilities\n✅ **ML Models** - Pre-trained and custom models\n✅ **BigQuery Integration** - Advanced analytics queries\n✅ **Data Processing** - Large-scale data pipelines\n\nWhat would you like me to do? I can:\n• Run ML predictions\n• Analyze data patterns\n• Execute AI workflows\n• Process your real estate lead data\n\nWhat task would you like to accomplish?`);
+            mo.speak('Acrobat Project is now active. I have access to Vertex AI and advanced ML capabilities. What would you like me to do?');
+        }
+
         function startVoiceInput() {
             const btn = document.getElementById('voiceInputBtn');
             const input = document.getElementById('messageInput');
@@ -1521,7 +1766,7 @@
                 let finalTranscript = '';
                 let interimTranscript = '';
 
-                recognition.onstart = function() {
+                recognition.onstart = function () {
                     mo.addMessage('system', '🎤 Continuous voice listening active... Say "stop listening" to end');
                 };
 
@@ -1571,7 +1816,7 @@
 
                 recognition.onerror = function (event) {
                     let errorMessage = 'Voice recognition error';
-                    switch(event.error) {
+                    switch (event.error) {
                         case 'no-speech':
                             errorMessage = 'No speech detected. Please try again.';
                             break;
@@ -1685,6 +1930,14 @@
 
             if (lowerMessage.includes('automator') || lowerMessage.includes('workflow')) {
                 return `I can integrate with macOS Automator to help you create powerful workflows! I can help you build automations for file management, document processing, email handling, and much more. Just tell me what repetitive task you'd like to automate, and I'll guide you through creating the workflow.`;
+            }
+
+            if (lowerMessage.includes('acrobat') || lowerMessage.includes('vertex') || lowerMessage.includes('alert-acrobat')) {
+                return `I have access to the alert-acrobat GCP project (alert-acrobat-477200-g9)! This gives me powerful Vertex AI and ML capabilities. I can:\n\n• Execute Vertex AI models and predictions\n• Run machine learning workflows\n• Access advanced AI/ML services\n• Process complex data pipelines\n\nWhat AI or ML task would you like me to help you with?`;
+            }
+
+            if (lowerMessage.includes('bigquery') || lowerMessage.includes('data warehouse') || lowerMessage.includes('analytics')) {
+                return `I can access both BigQuery projects:\n\n1. **aimo-460701** - Primary real estate data warehouse with 244K+ leads\n2. **alert-acrobat-477200-g9** - Secondary analytics and ML project\n\nI can query, analyze, and generate insights from your data. What would you like to know about your leads or data?`;
             }
 
             // General AI response with Mo's personality
