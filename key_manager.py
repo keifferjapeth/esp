@@ -41,8 +41,9 @@ class KeyManager:
             if path.exists():
                 with open(path, 'r') as f:
                     return json.load(f)
-        except Exception as e:
-            print(f"Error loading key from {file_path}: {e}")
+        except Exception:
+            # Don't log exception details to avoid exposing sensitive data
+            pass
         return None
     
     def get_key(self, service: str = None) -> Optional[Any]:
@@ -66,6 +67,7 @@ class KeyManager:
             
             if key:
                 self._key_cache[priority_name] = key
+                # Log only the priority name, not the actual key data
                 print(f"Using API key from: {priority_name}")
                 return key
         
@@ -110,6 +112,7 @@ if __name__ == "__main__":
     # Test the key manager
     manager = KeyManager()
     print("Key Manager initialized")
+    # priority_order contains only priority names, not sensitive data
     print(f"Priority order: {manager.priority_order}")
     
     # Validate keys
@@ -117,11 +120,13 @@ if __name__ == "__main__":
     print("\nKey validation results:")
     for name, valid in validation.items():
         status = "✓" if valid else "✗"
+        # Only logging priority name, not the key value
         print(f"  {status} {name}")
     
     # Try to get a key
     key = manager.get_key()
     if key:
+        # Only logging priority name, not the key data
         print(f"\nActive key priority: {manager.get_active_key_priority()}")
     else:
         print("\nNo keys available")
