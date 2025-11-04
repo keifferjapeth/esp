@@ -1,0 +1,75 @@
+{
+  "api_keys": {
+    "priority_order": [
+      "primary",
+      "tilda_env",
+      "google_service",
+      "vertex",
+      "local_backup"
+    ],
+    "sources": {
+      "primary": {
+        "type": "environment",
+        "var": "ESP_PRIMARY_KEY"
+      },
+      "tilda_env": {
+        "type": "environment",
+        "var": "TILDA_API_KEY"
+      },
+      "google_service": {
+        "type": "file",
+        "path": "~/Documents/GitHub/keys/google_service.json"
+      },
+      "vertex": {
+        "type": "file",
+        "path": "~/Documents/GitHub/keys/vertex_key.json"
+      },
+      "local_backup": {
+        "type": "file",
+        "path": "~/Documents/GitHub/keys/backup_keys.json"
+      }
+    }
+  },
+  "services": {
+    "bigquery": {
+      "enabled": true,
+      "project_id": "",
+      "dataset_id": ""
+    },
+    "gemini": {
+      "enabled": true,
+      "model": "gemini-pro"
+    },
+    "vertex": {
+      "enabled": true,
+      "region": "us-central1"
+    },
+    "terminal_automator": {
+      "enabled": true,
+      "notes_path": "~/Library/Application Support/Terminal/automator_notes"
+    }
+  },
+  "validation": {
+    "passes": 7,
+    "checks": [
+      "key_availability",
+      "service_connectivity",
+      "permission_check",
+      "rate_limit_check",
+      "data_integrity",
+      "security_validation",
+      "end_to_end_test"
+    ]
+  },
+  "ui": {
+    "tilda_console": {
+      "theme": "liquid_glass",
+      "colors": {
+        "background": "rgba(0, 0, 0, 0.7)",
+        "text": "#ffffff",
+        "accent": "#f0f0f0"
+      },
+      "transparency": 0.3
+    }
+  }
+}
