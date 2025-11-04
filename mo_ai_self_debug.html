@@ -632,7 +632,7 @@
                     <strong>Last Saved:</strong> <span id="lastSaved">Never</span>
                 </div>
                 <div style="margin-top: 15px; display: flex; gap: 10px;">
-                    <button class="action-button" onclick="mo.savePersistentMemory(); updateMemoryDisplay()"
+                    <button class="action-button" onclick="mo.saveCloudMemory(); updateMemoryDisplay()"
                         style="flex: 1;">
                         💾 Save Now
                     </button>
@@ -671,7 +671,7 @@
                 this.observationActive = true;
 
                 // Load persistent memory
-                this.loadPersistentMemory();
+                this.loadCloudMemory();
 
                 this.initializeVoiceSystem();
                 this.startSelfDiagnostic();
@@ -722,6 +722,62 @@
                     this.log('🧠 Persistent memory cleared');
                 } catch (error) {
                     this.logError('Failed to clear persistent memory', error);
+                }
+            }
+
+            async saveCloudMemory() {
+                try {
+                    const data = {
+                        behaviorPatterns: this.behaviorPatterns,
+                        learningData: this.learningData,
+                        fixedErrors: this.fixedErrors,
+                        lastSaved: new Date().toISOString(),
+                        userId: this.userId || 'anonymous'
+                    };
+
+                    const response = await fetch('https://api.mo-ai.cloud/memory/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.apiKey || 'demo-key'}`
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (response.ok) {
+                        console.log('[Mo AI] Memory saved to cloud successfully');
+                    } else {
+                        throw new Error(`Cloud save failed: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.warn('[Mo AI] Cloud memory save failed, falling back to localStorage');
+                    this.savePersistentMemory(); // Fallback to localStorage
+                }
+            }
+
+            async loadCloudMemory() {
+                try {
+                    const response = await fetch(`https://api.mo-ai.cloud/memory/load?userId=${this.userId || 'anonymous'}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${this.apiKey || 'demo-key'}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.behaviorPatterns = data.behaviorPatterns || [];
+                        this.learningData = data.learningData || {};
+                        this.fixedErrors = data.fixedErrors || 0;
+                        console.log('[Mo AI] Memory loaded from cloud successfully');
+                        return true;
+                    } else {
+                        throw new Error(`Cloud load failed: ${response.status}`);
+                    }
+                } catch (error) {
+                    console.warn('[Mo AI] Cloud memory load failed, falling back to localStorage');
+                    this.loadPersistentMemory(); // Fallback to localStorage
+                    return false;
                 }
             }            // Onyx Voice System Integration
             async initializeVoiceSystem() {
@@ -936,9 +992,8 @@
                         if (fixed) {
                             this.fixedErrors++;
                             this.updateStatus('errorsFixed', this.fixedErrors.toString());
-                            this.savePersistentMemory(); // Save when error is fixed
-                            this.log(`✅ Successfully fixed error: ${errorType}`);
-                            this.speak(`I've automatically fixed an error in my ${errorType.replace('_', ' ')} system.`);
+                            this.saveCloudMemory(); // Save to cloud when error is fixed
+                            console.log(`[Mo AI] Silently fixed error: ${errorType}`);
                         }
                     } catch (fixError) {
                         this.log(`❌ Failed to fix error: ${fixError.message}`);
@@ -1089,7 +1144,7 @@
 
                 // Save to persistent memory every 10 new behaviors
                 if (this.behaviorPatterns.length % 10 === 0) {
-                    this.savePersistentMemory();
+                    this.saveCloudMemory();
                 }
 
                 // Analyze patterns periodically
@@ -1437,32 +1492,130 @@
 
         function startVoiceInput() {
             const btn = document.getElementById('voiceInputBtn');
+            const input = document.getElementById('messageInput');
+
+            // Toggle continuous listening mode
+            if (btn.classList.contains('listening')) {
+                // Stop listening
+                if (window.currentRecognition) {
+                    window.currentRecognition.stop();
+                    window.currentRecognition = null;
+                }
+                btn.classList.remove('listening');
+                mo.addMessage('system', '🎤 Voice input stopped');
+                return;
+            }
+
             btn.classList.add('listening');
 
             if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
                 const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                recognition.continuous = false;
-                recognition.interimResults = false;
+                window.currentRecognition = recognition;
+
+                // Enhanced recognition settings
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                recognition.maxAlternatives = 1;
+
+                let finalTranscript = '';
+                let interimTranscript = '';
+
+                recognition.onstart = function() {
+                    mo.addMessage('system', '🎤 Continuous voice listening active... Say "stop listening" to end');
+                };
 
                 recognition.onresult = function (event) {
-                    const transcript = event.results[0][0].transcript;
-                    document.getElementById('messageInput').value = transcript;
-                    btn.classList.remove('listening');
+                    interimTranscript = '';
+                    finalTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        const transcript = event.results[i][0].transcript;
+                        if (event.results[i].isFinal) {
+                            finalTranscript += transcript;
+
+                            // Check for stop commands
+                            if (transcript.toLowerCase().includes('stop listening') ||
+                                transcript.toLowerCase().includes('stop voice')) {
+                                recognition.stop();
+                                return;
+                            }
+                        } else {
+                            interimTranscript += transcript;
+                        }
+                    }
+
+                    // Show interim results
+                    if (interimTranscript) {
+                        input.value = finalTranscript + interimTranscript;
+                        input.style.color = 'rgba(255,255,255,0.7)'; // Dim interim text
+                    }
+
+                    // Process final results
+                    if (finalTranscript) {
+                        input.value = finalTranscript;
+                        input.style.color = ''; // Normal color for final text
+
+                        // Auto-send if it looks like a complete command
+                        if (finalTranscript.length > 3 && (
+                            finalTranscript.endsWith('.') ||
+                            finalTranscript.endsWith('?') ||
+                            finalTranscript.endsWith('!') ||
+                            finalTranscript.toLowerCase().includes('send') ||
+                            finalTranscript.toLowerCase().includes('execute')
+                        )) {
+                            setTimeout(() => sendMessage(), 500);
+                        }
+                    }
                 };
 
                 recognition.onerror = function (event) {
-                    mo.addMessage('system', '❌ Voice recognition error: ' + event.error);
-                    btn.classList.remove('listening');
+                    let errorMessage = 'Voice recognition error';
+                    switch(event.error) {
+                        case 'no-speech':
+                            errorMessage = 'No speech detected. Please try again.';
+                            break;
+                        case 'audio-capture':
+                            errorMessage = 'No microphone found. Please check your microphone.';
+                            break;
+                        case 'not-allowed':
+                            errorMessage = 'Microphone permission denied. Please allow microphone access.';
+                            break;
+                        case 'network':
+                            errorMessage = 'Network error during voice recognition.';
+                            break;
+                        default:
+                            errorMessage = `Voice recognition error: ${event.error}`;
+                    }
+
+                    console.warn('[Mo AI] Voice recognition error:', event.error);
+                    mo.addMessage('system', `❌ ${errorMessage}`);
+
+                    if (event.error === 'not-allowed') {
+                        // Try to request permission again
+                        setTimeout(() => startVoiceInput(), 2000);
+                    }
                 };
 
                 recognition.onend = function () {
                     btn.classList.remove('listening');
+                    window.currentRecognition = null;
+
+                    // If we have final transcript, keep it
+                    if (input.value && !input.value.includes('🎤')) {
+                        mo.addMessage('system', '🎤 Voice input ended');
+                    }
                 };
 
-                recognition.start();
-                mo.addMessage('system', '🎤 Listening for voice input...');
+                try {
+                    recognition.start();
+                } catch (error) {
+                    console.error('[Mo AI] Failed to start voice recognition:', error);
+                    mo.addMessage('system', '❌ Failed to start voice recognition');
+                    btn.classList.remove('listening');
+                }
             } else {
-                mo.addMessage('system', '❌ Voice recognition not supported in this browser');
+                mo.addMessage('system', '❌ Voice recognition not supported in this browser. Please use Chrome, Edge, or Safari.');
                 btn.classList.remove('listening');
             }
         }
